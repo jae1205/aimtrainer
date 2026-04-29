@@ -367,12 +367,9 @@ function Home() {
 
             {/* CTA */}
             <div className="flex flex-col items-center gap-3">
-              <AimButton onClick={() => setShowSetup(true)}>
+              <AimButton onClick={() => navigate('/drills')}>
                 {t.startTestBtn}
               </AimButton>
-              <span className={`text-sm ${dark ? 'text-[#64748B]' : 'text-[#94A3B8]'}`}>
-                {t.freeDuration}
-              </span>
             </div>
           </div>
 
@@ -381,8 +378,7 @@ function Home() {
             dark ? 'bg-[#111827]/80 border-[#1E293B]' : 'bg-white/80 border-[#BAE6FD]'
           }`}>
             {[
-              { value: '3', label: dark ? '훈련 모듈' : 'Drill Modules' },
-              { value: '~3min', label: dark ? '소요 시간' : 'Duration' },
+              { value: '5', label: dark ? '훈련 모듈' : 'Drill Modules' },
               { value: '100%', label: dark ? '무료' : 'Free' },
             ].map((stat, i) => (
               <div key={i} className="text-center">

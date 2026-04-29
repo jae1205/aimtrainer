@@ -6,6 +6,7 @@ import Test2 from './pages/Test2'
 import Test3 from './pages/Test3'
 import Result from './pages/Result'
 import DevTest1 from './pages/DevTest1'
+import DrillList from './pages/DrillList'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/drills" element={<DrillList />} />
         <Route path="/test1" element={<Test1 />} />
         <Route path="/dev/test1" element={<DevTest1 />} />
         <Route path="/test2" element={<Test2 />} />

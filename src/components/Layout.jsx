@@ -90,6 +90,25 @@ function Layout({ children, isTestPage = false }) {
     window.dispatchEvent(new CustomEvent('crosshair-change', { detail: crosshair }))
   }, [crosshair])
 
+  /* ── Program dropdown ───────────────────────────────────────── */
+  const [programOpen, setProgramOpen] = useState(false)
+  const programRef = useRef(null)
+
+  const DRILL_LIST = [
+    { label: '360° 회전 제어', path: '/test1' },
+    { label: '플리킹', path: '/test2' },
+    { label: '탭샷', path: '/test3' },
+  ]
+
+  useEffect(() => {
+    if (!programOpen) return
+    const handler = (e) => {
+      if (programRef.current && !programRef.current.contains(e.target)) setProgramOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [programOpen])
+
   /* ── Settings panel ──────────────────────────────────────────── */
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef(null)
@@ -178,13 +197,26 @@ function Layout({ children, isTestPage = false }) {
       >
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
 
-          {/* Logo */}
-          <button type="button" onClick={() => navigate('/')} className="flex items-center gap-1">
-            <span className="text-lg font-black tracking-tight">
-              <span className="text-[#22D3EE]">Aim</span>
-              <span style={{ color: C.text }}>Forge</span>
-            </span>
-          </button>
+          {/* Logo + Program buttons */}
+          <div className="flex items-center gap-4">
+            <button type="button" onClick={() => navigate('/')} className="flex items-center gap-1">
+              <span className="text-lg font-black tracking-tight">
+                <span className="text-[#22D3EE]">Aim</span>
+                <span style={{ color: C.text }}>Forge</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/drills')}
+              className="px-3 h-7 rounded-md text-xs font-medium transition-all duration-150"
+              style={{ color: C.muted }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
+            >
+              훈련목록
+            </button>
+          </div>
 
           {/* Settings button */}
           <div className="relative" ref={settingsRef}>

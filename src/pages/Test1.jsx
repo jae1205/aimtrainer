@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
-import RotationSim from '../components/RotationSim'
+import SkeetTrackingSim from '../components/SkeetTrackingSim'
 import { useLanguage } from '../contexts/LanguageContext'
 
 function Test1() {
@@ -36,7 +36,7 @@ function Test1() {
     }
   }, [])
 
-  const [movement, setMovement] = useState(0)
+  const [score, setScore] = useState(0)
 
   const handleComplete = (data) => {
     localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier }))
@@ -53,7 +53,7 @@ function Test1() {
           theme === 'light' ? 'bg-[#F5F0EA]' : 'bg-[#0F1923]'
         } w-full flex-1 flex items-center justify-center`}
       >
-        <RotationSim onComplete={handleComplete} sensitivity={sensitivityMultiplier} theme={theme} onMovementChange={setMovement} />
+        <SkeetTrackingSim onComplete={handleComplete} sensitivity={sensitivityMultiplier} theme={theme} onStatsChange={({ score: s }) => setScore(s)} />
 
         <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[1002] w-72 flex flex-col gap-3 pointer-events-none">
 
@@ -61,10 +61,10 @@ function Test1() {
           <div className={`px-4 py-3 rounded-2xl border backdrop-blur-md shadow-lg ${
             theme === 'light' ? 'bg-white/95 border-[#DDD8D2]' : 'bg-[#1B2E3D]/90 border-[#2A3D4F]'
           }`}>
-            <p className={`text-[10px] uppercase tracking-wider font-semibold mb-2 ${sub}`}>{t.currentMovement}</p>
+            <p className={`text-[10px] uppercase tracking-wider font-semibold mb-2 ${sub}`}>파괴한 타겟</p>
             <div className="flex items-baseline gap-1">
-              <span className={`text-xl font-black ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>{movement.toFixed(0)}</span>
-              <span className={`text-xs ${sub}`}>px</span>
+              <span className={`text-xl font-black ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>{score}</span>
+              <span className={`text-xs ${sub}`}>개</span>
             </div>
           </div>
 
@@ -73,16 +73,16 @@ function Test1() {
             theme === 'light' ? 'bg-white/95 border-[#DDD8D2] text-[#1A1F2E]' : 'bg-[#1B2E3D]/90 border-[#2A3D4F] text-[#ECE8E1]'
           }`}>
             <p className="text-[10px] uppercase tracking-wider font-semibold text-[#ff4655] mb-1">Test 1</p>
-            <h2 className="text-lg font-black mb-2 leading-snug">{t.t1Heading}</h2>
+            <h2 className="text-lg font-black mb-2 leading-snug">스키트 트래킹</h2>
             <p className={`text-sm mb-3 leading-relaxed ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'}`}>
-              {t.t1Desc}
+              호를 그리며 움직이는 타겟을 크로스헤어로 계속 추적합니다. 30초간 타겟 위에 머문 비율을 측정합니다.
             </p>
             <ol className={`text-xs space-y-1 leading-relaxed ${sub}`}>
-              <li>{t.t1Step1}</li>
-              <li>{t.t1Step2}</li>
-              <li>{t.t1Step3}</li>
+              <li>1. 시작 버튼 클릭 후 포인터 락</li>
+              <li>2. 빨간 타겟이 호를 그리며 이동</li>
+              <li>3. 크로스헤어를 타겟에 계속 올려두기</li>
             </ol>
-            <p className="text-xs text-[#ff4655] mt-2 font-medium">{t.t1Tip}</p>
+            <p className="text-xs text-[#ff4655] mt-2 font-medium">타겟을 놓치지 않는 것이 핵심!</p>
           </div>
 
           {/* 감도 */}
