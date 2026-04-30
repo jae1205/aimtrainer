@@ -68,10 +68,6 @@ function Layout({ children, isTestPage = false }) {
     return () => window.removeEventListener('mousemove', handler)
   }, [testActive, pointerLocked])
 
-  const uiHidden = isTestPage && testActive
-  const showHeader = !uiHidden || mouseNearTop
-  const showFooter = !uiHidden || mouseNearBottom
-
   /* ── Volume ──────────────────────────────────────────────────── */
   const [volume, setVolumeState] = useState(() => getSoundVolume())
 
@@ -112,6 +108,10 @@ function Layout({ children, isTestPage = false }) {
   /* ── Settings panel ──────────────────────────────────────────── */
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef(null)
+
+  const uiHidden = isTestPage && testActive
+  const showHeader = !uiHidden || mouseNearTop || settingsOpen
+  const showFooter = !uiHidden || mouseNearBottom
 
   useEffect(() => {
     if (!settingsOpen) return
@@ -184,12 +184,12 @@ function Layout({ children, isTestPage = false }) {
       {/* Navbar */}
       <header
         className={`z-40 border-b backdrop-blur-md transition-[transform,opacity] duration-300 ease-in-out ${
-          testActive ? 'fixed top-0 left-0 right-0' : 'sticky top-0'
+          isTestPage ? 'fixed top-0 left-0 right-0' : 'sticky top-0'
         }`}
         style={{
           background: C.navBg,
           borderColor: C.border,
-          ...(testActive ? {
+          ...(uiHidden ? {
             transform: showHeader ? 'translateY(0)' : 'translateY(-100%)',
             opacity: showHeader ? 1 : 0,
           } : {}),
@@ -374,12 +374,12 @@ function Layout({ children, isTestPage = false }) {
       {/* Footer */}
       <footer
         className={`border-t transition-[transform,opacity] duration-300 ease-in-out ${
-          testActive ? 'fixed bottom-0 left-0 right-0 z-40' : ''
+          isTestPage ? 'fixed bottom-0 left-0 right-0 z-40' : ''
         }`}
         style={{
           background: C.footerBg,
           borderColor: C.border,
-          ...(testActive ? {
+          ...(uiHidden ? {
             transform: showFooter ? 'translateY(0)' : 'translateY(100%)',
             opacity: showFooter ? 1 : 0,
           } : {}),
