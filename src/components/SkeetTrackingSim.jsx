@@ -9,7 +9,7 @@ import * as THREE from 'three'
 
 const CAMERA_CONFIG = { position: [0, 0, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
-const DURATION = 30
+const DURATION = 60
 const NUM_BALLS = 4
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
@@ -492,7 +492,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             <p className={`mb-6 leading-relaxed ${theme === 'light' ? 'text-[#1A1F2E]/70' : 'text-[#ECE8E1]/70'}`}>
               호를 그리며 날아가는 타겟에 크로스헤어를 올리면<br />
               체력이 깎입니다. <strong>체력이 0이 되면 타겟 파괴!</strong><br />
-              30초 동안 최대한 많이 파괴하세요.
+              60초 동안 최대한 많이 파괴하세요.
             </p>
             <button
               type="button"
