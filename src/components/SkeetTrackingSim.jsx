@@ -35,7 +35,7 @@ const BALL_SIZE_OPTIONS = [
   { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.2 },
   { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.32 },
 ]
-const BALL_SPEED_FIXED = 1.0
+const BALL_SPEED_FIXED = 0.8
 const BALL_HP_FIXED    = 0.7
 const BALL_COUNT_OPTIONS = [
   { key: '2', labelKr: '2개', labelEn: '2', value: 2 },
