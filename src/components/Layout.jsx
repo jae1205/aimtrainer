@@ -32,8 +32,6 @@ function Layout({ children, isTestPage = false }) {
   /* ── Test fullscreen ─────────────────────────────────────────── */
   const [testActive, setTestActive] = useState(false)
   const [pointerLocked, setPointerLocked] = useState(false)
-  const [mouseNearTop, setMouseNearTop] = useState(false)
-  const [mouseNearBottom, setMouseNearBottom] = useState(false)
 
   useEffect(() => {
     const onStart = () => setTestActive(true)
@@ -52,21 +50,6 @@ function Layout({ children, isTestPage = false }) {
     document.addEventListener('pointerlockchange', handler)
     return () => document.removeEventListener('pointerlockchange', handler)
   }, [isTestPage])
-
-  useEffect(() => {
-    if (!testActive || pointerLocked) {
-      setMouseNearTop(false)
-      setMouseNearBottom(false)
-      return
-    }
-    const EDGE = 72
-    const handler = (e) => {
-      setMouseNearTop(e.clientY < EDGE)
-      setMouseNearBottom(e.clientY > window.innerHeight - EDGE)
-    }
-    window.addEventListener('mousemove', handler)
-    return () => window.removeEventListener('mousemove', handler)
-  }, [testActive, pointerLocked])
 
   /* ── Volume ──────────────────────────────────────────────────── */
   const [volume, setVolumeState] = useState(() => getSoundVolume())
@@ -109,9 +92,9 @@ function Layout({ children, isTestPage = false }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef(null)
 
-  const uiHidden = isTestPage && testActive
-  const showHeader = !uiHidden || mouseNearTop || settingsOpen
-  const showFooter = !uiHidden || mouseNearBottom
+  const uiHidden = isTestPage && testActive && pointerLocked
+  const showHeader = !uiHidden || settingsOpen
+  const showFooter = !uiHidden
 
   useEffect(() => {
     if (!settingsOpen) return

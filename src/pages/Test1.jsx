@@ -93,7 +93,7 @@ function Test1() {
         />
 
         {/* HUD — 헤더 바로 아래 가운데 */}
-        <div className={`absolute top-14 left-1/2 -translate-x-1/2 z-[39] pointer-events-none transition-all duration-300 flex gap-3 ${
+        <div className={`absolute top-20 left-1/2 -translate-x-1/2 z-[39] pointer-events-none transition-all duration-300 flex gap-3 ${
           simActive ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
         }`}>
 
