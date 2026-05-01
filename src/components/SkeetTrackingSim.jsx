@@ -95,7 +95,10 @@ function hpColor(hp) {
   return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2).clone()
 }
 
-function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1 }) {
+function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS }) {
+  const barW = ballRadius * 4.5
+  const barH = ballRadius * 0.9
+  const barY = ballRadius + 0.38
   const groups  = useRef([])   // group per ball
   const spheres = useRef([])   // sphere meshes (for raycasting)
   const hpBgs   = useRef([])   // background bar planes
@@ -168,7 +171,7 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
 
       // Update fill bar (left-aligned)
       fill.scale.x  = Math.max(0.001, h)
-      fill.position.x = BAR_W * (h - 1) / 2
+      fill.position.x = barW * (h - 1) / 2
       fill.material.color.copy(hpColor(h))
 
       // Beep (faster as HP drops)
@@ -229,25 +232,25 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
         <group key={i} ref={el => { groups.current[i] = el }}>
           {/* Ball sphere */}
           <mesh ref={el => { spheres.current[i] = el }}>
-            <sphereGeometry args={[BALL_RADIUS, 24, 24]} />
+            <sphereGeometry args={[ballRadius, 24, 24]} />
             <meshStandardMaterial color="#ff4655" roughness={0.6} metalness={0.2} />
           </mesh>
 
           {/* HP bar group — billboards via quaternion copy in useFrame */}
-          <group ref={el => { barGroups.current[i] = el }} position={[0, BAR_Y, 0]}>
+          <group ref={el => { barGroups.current[i] = el }} position={[0, barY, 0]}>
             {/* White border */}
             <mesh position={[0, 0, -0.01]}>
-              <planeGeometry args={[BAR_W + BORDER * 2, BAR_H + BORDER * 2]} />
+              <planeGeometry args={[barW + BORDER * 2, barH + BORDER * 2]} />
               <meshBasicMaterial color="#ffffff" depthTest={false} />
             </mesh>
             {/* Dark background */}
             <mesh ref={el => { hpBgs.current[i] = el }}>
-              <planeGeometry args={[BAR_W, BAR_H]} />
+              <planeGeometry args={[barW, barH]} />
               <meshBasicMaterial color="#111111" depthTest={false} />
             </mesh>
             {/* Fill */}
             <mesh ref={el => { hpFills.current[i] = el }} position={[0, 0, 0.01]}>
-              <planeGeometry args={[BAR_W, BAR_H]} />
+              <planeGeometry args={[barW, barH]} />
               <meshBasicMaterial color="#22c55e" depthTest={false} />
             </mesh>
           </group>
@@ -271,18 +274,13 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [localSens, setLocalSens] = useState(sensitivity)
   const [sensEditing, setSensEditing] = useState(false)
   const [sensInput, setSensInput] = useState('')
-  const [difficulty, setDifficulty] = useState('normal')
+  const [ballSize,  setBallSize]  = useState(0.20)
+  const [ballSpeed, setBallSpeed] = useState(1.0)
+  const [ballHP,    setBallHP]    = useState(1.0)
   const [localDpi, setLocalDpi] = useState(() => {
     const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
     return setup.dpi || 800
   })
-
-  const DIFFICULTIES = [
-    { key: 'easy',   label: '쉬움',   speedMult: 0.7,  drainMult: 1.5, desc: '느린 공 · 긴 체력' },
-    { key: 'normal', label: '보통',   speedMult: 1.0,  drainMult: 1.0, desc: '기본 설정' },
-    { key: 'hard',   label: '어려움', speedMult: 1.35, drainMult: 0.7, desc: '빠른 공 · 짧은 체력' },
-  ]
-  const currentDiff = DIFFICULTIES.find(d => d.key === difficulty)
 
   const eDPI = Math.round(localDpi * localSens * 100) / 100
   const cm360 = eDPI > 0 ? 13063 / eDPI : 0
@@ -510,27 +508,78 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             </button>
           </div>
 
-          {/* 오른쪽 — 난이도 설정 */}
-          <div className={`p-6 rounded-3xl border shadow-2xl w-52 shrink-0 ${panelCls}`}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">난이도 설정</p>
-            <div className="flex flex-col gap-2 mb-4">
-              {DIFFICULTIES.map((d) => (
-                <button
-                  key={d.key}
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setDifficulty(d.key) }}
-                  className="w-full py-2 px-3 rounded-xl border text-sm font-bold text-left transition-all"
-                  style={{
-                    background: difficulty === d.key ? '#22D3EE' : 'transparent',
-                    borderColor: difficulty === d.key ? '#22D3EE' : (theme === 'light' ? '#BAE6FD' : '#1E293B'),
-                    color: difficulty === d.key ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
-                  }}
-                >
-                  {d.label}
-                </button>
-              ))}
+          {/* 오른쪽 — 커스텀 설정 */}
+          <div className={`p-6 rounded-3xl border shadow-2xl w-56 shrink-0 ${panelCls}`}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">커스텀 설정</p>
+
+            {/* 공의 크기 */}
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>공의 크기</span>
+                <span className="text-xs font-bold text-[#22D3EE]">{ballSize.toFixed(2)}</span>
+              </div>
+              <div className="relative h-5 flex items-center">
+                <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#BAE6FD' : '#1E293B' }} />
+                <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${((ballSize - 0.10) / 0.30) * 100}%` }} />
+                <input type="range" min="0.10" max="0.40" step="0.01" value={ballSize}
+                  onChange={(e) => setBallSize(parseFloat(e.target.value))}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="absolute w-3.5 h-3.5 rounded-full border-2 border-white bg-[#22D3EE] pointer-events-none shadow"
+                  style={{ left: `calc(${((ballSize - 0.10) / 0.30) * 100}% - 7px)` }} />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className={`text-[10px] ${sub}`}>작음</span>
+                <span className={`text-[10px] ${sub}`}>큼</span>
+              </div>
             </div>
-            <p className={`text-[11px] text-center ${sub}`}>{currentDiff?.desc}</p>
+
+            {/* 공의 속도 */}
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>공의 속도</span>
+                <span className="text-xs font-bold text-[#22D3EE]">{ballSpeed.toFixed(1)}x</span>
+              </div>
+              <div className="relative h-5 flex items-center">
+                <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#BAE6FD' : '#1E293B' }} />
+                <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${((ballSpeed - 0.5) / 1.5) * 100}%` }} />
+                <input type="range" min="0.5" max="2.0" step="0.1" value={ballSpeed}
+                  onChange={(e) => setBallSpeed(parseFloat(e.target.value))}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="absolute w-3.5 h-3.5 rounded-full border-2 border-white bg-[#22D3EE] pointer-events-none shadow"
+                  style={{ left: `calc(${((ballSpeed - 0.5) / 1.5) * 100}% - 7px)` }} />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className={`text-[10px] ${sub}`}>느림</span>
+                <span className={`text-[10px] ${sub}`}>빠름</span>
+              </div>
+            </div>
+
+            {/* 공의 체력 */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>공의 체력</span>
+                <span className="text-xs font-bold text-[#22D3EE]">{ballHP.toFixed(1)}x</span>
+              </div>
+              <div className="relative h-5 flex items-center">
+                <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#BAE6FD' : '#1E293B' }} />
+                <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${((ballHP - 0.5) / 2.5) * 100}%` }} />
+                <input type="range" min="0.5" max="3.0" step="0.1" value={ballHP}
+                  onChange={(e) => setBallHP(parseFloat(e.target.value))}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="absolute w-3.5 h-3.5 rounded-full border-2 border-white bg-[#22D3EE] pointer-events-none shadow"
+                  style={{ left: `calc(${((ballHP - 0.5) / 2.5) * 100}% - 7px)` }} />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className={`text-[10px] ${sub}`}>낮음</span>
+                <span className={`text-[10px] ${sub}`}>높음</span>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -574,8 +623,9 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               active={countdown === 0 && !completed && isPointerLocked}
               onDestroy={() => setScore(s => s + 1)}
               theme={theme}
-              speedMult={currentDiff?.speedMult ?? 1}
-              drainMult={currentDiff?.drainMult ?? 1}
+              speedMult={ballSpeed}
+              drainMult={ballHP}
+              ballRadius={ballSize}
             />
           </>
         )}
