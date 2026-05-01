@@ -13,10 +13,10 @@ const DURATION = 60
 const NUM_BALLS = 4
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
-const BAR_W = BALL_RADIUS * 4.5
-const BAR_H = BALL_RADIUS * 0.9
-const BAR_Y = BALL_RADIUS + 0.38
-const BORDER = 0.03
+const BAR_W = BALL_RADIUS * 2.25
+const BAR_H = BALL_RADIUS * 0.45
+const BAR_Y = BALL_RADIUS + 0.2
+const BORDER = 0.015
 
 const WALL_X   = 6
 const FLOOR_Y  = -2.0
@@ -96,9 +96,9 @@ function hpColor(hp) {
 }
 
 function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS }) {
-  const barW = ballRadius * 4.5
-  const barH = ballRadius * 0.9
-  const barY = ballRadius + 0.38
+  const barW = ballRadius * 2.25
+  const barH = ballRadius * 0.45
+  const barY = ballRadius + 0.2
   const groups  = useRef([])   // group per ball
   const spheres = useRef([])   // sphere meshes (for raycasting)
   const hpBgs   = useRef([])   // background bar planes
@@ -338,12 +338,12 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   }, [started, countdown])
 
   useEffect(() => {
-    if (!started || countdown !== 0) return
+    if (!started || countdown !== 0 || !isPointerLocked) return
     const iv = setInterval(() => {
       setTimeLeft(p => { if (p <= 1) { clearInterval(iv); return 0 } return p - 1 })
     }, 1000)
     return () => clearInterval(iv)
-  }, [started, countdown])
+  }, [started, countdown, isPointerLocked])
 
   useEffect(() => {
     if (!started || countdown !== 0 || timeLeft > 0) return
