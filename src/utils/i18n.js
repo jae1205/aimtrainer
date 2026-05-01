@@ -37,13 +37,13 @@ export const translations = {
 
     // Home – Features section
     featuresLabel: '왜 AimForge인가',
-    featuresHeading: '과학적인 에임 분석',
-    feat1Title: '정밀한 데이터 분석',
-    feat1Desc: '단순한 점수가 아닌 오버슈트·언더슈트·반응속도 등 세부 지표를 제공합니다.',
-    feat2Title: '즉각적인 피드백',
-    feat2Desc: '훈련이 끝나면 현재 감도가 내 플레이 스타일에 맞는지 바로 확인할 수 있습니다.',
+    featuresHeading: '에임 실력을 빠르게 끌어올리는 방법',
+    feat1Title: '다양한 훈련 모드',
+    feat1Desc: '트래킹, 플리킹, 탭샷 — 유형별 훈련으로 에임의 약점을 집중적으로 보완하세요.',
+    feat2Title: '내 마음대로 커스텀',
+    feat2Desc: '공의 크기·속도·체력, 감도까지 원하는 대로 조절해 나만의 훈련 환경을 만드세요.',
     feat3Title: '완전 무료',
-    feat3Desc: '설치 없이 브라우저에서 바로 시작하세요. 로그인도 필요 없습니다.',
+    feat3Desc: '설치도, 로그인도 필요 없습니다. 브라우저에서 바로 시작하세요.',
 
     // Home – CTA
     ctaHeading: '지금 바로 시작해 보세요',
