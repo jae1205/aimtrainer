@@ -75,7 +75,9 @@ export default function Crosshair({ visible = true }) {
         visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      <Component />
+      <div style={{ transform: 'scale(0.5)' }}>
+        <Component />
+      </div>
     </div>
   )
 }
