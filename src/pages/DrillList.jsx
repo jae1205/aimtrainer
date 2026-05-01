@@ -1,47 +1,57 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const DRILLS = [
   {
     id: 1,
     path: '/test1',
-    title: '스키트 트래킹',
-    desc: '호를 그리며 날아가는 타겟을 60초간 추적해 트래킹 정확도를 측정합니다.',
+    title: { kr: '스키트 트래킹', en: 'Skeet Tracking' },
+    desc: {
+      kr: '호를 그리며 날아가는 타겟을 60초간 추적해 트래킹 정확도를 측정합니다.',
+      en: 'Track arcing targets for 60 seconds to measure tracking accuracy.',
+    },
     tag: 'Tracking',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 19 Q8 8 19 5"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="12" r="3"/>
+        <path d="M5 19 Q8 8 19 5" /><circle cx="19" cy="5" r="2" /><circle cx="12" cy="12" r="3" />
       </svg>
     ),
   },
   {
     id: 2,
     path: '/test2',
-    title: '플리킹',
-    desc: '좌우로 나타나는 타겟을 빠르게 조준해 플릭 정확도를 측정합니다.',
+    title: { kr: '플리킹', en: 'Flicking' },
+    desc: {
+      kr: '좌우로 나타나는 타겟을 빠르게 조준해 플릭 정확도를 측정합니다.',
+      en: 'Quickly aim at targets appearing left and right to measure flick accuracy.',
+    },
     tag: 'Flicking',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
       </svg>
     ),
   },
   {
     id: 3,
     path: '/test3',
-    title: '탭샷',
-    desc: '순서대로 나타나는 타겟을 빠르게 클릭해 반응속도와 정확도를 측정합니다.',
+    title: { kr: '탭샷', en: 'Tap Shot' },
+    desc: {
+      kr: '순서대로 나타나는 타겟을 빠르게 클릭해 반응속도와 정확도를 측정합니다.',
+      en: 'Click targets as they appear to measure reaction speed and accuracy.',
+    },
     tag: 'Tap Shot',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+        <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
       </svg>
     ),
   },
 ]
 
-function DrillCard({ drill, dark }) {
+function DrillCard({ drill, dark, lang }) {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(false)
 
@@ -77,12 +87,12 @@ function DrillCard({ drill, dark }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-base font-bold" style={{ color: C.text }}>{drill.title}</span>
+            <span className="text-base font-bold" style={{ color: C.text }}>{drill.title[lang]}</span>
             <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: C.tag, color: '#22D3EE' }}>
               {drill.tag}
             </span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: C.muted }}>{drill.desc}</p>
+          <p className="text-sm leading-relaxed" style={{ color: C.muted }}>{drill.desc[lang]}</p>
         </div>
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -90,7 +100,7 @@ function DrillCard({ drill, dark }) {
           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           className="flex-shrink-0 mt-1 transition-colors duration-200"
         >
-          <polyline points="9 18 15 12 9 6"/>
+          <polyline points="9 18 15 12 9 6" />
         </svg>
       </div>
     </button>
@@ -98,6 +108,7 @@ function DrillCard({ drill, dark }) {
 }
 
 function DrillList() {
+  const { lang } = useLanguage()
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('themeMode') || 'system')
 
   const resolveTheme = (mode) => {
@@ -124,15 +135,19 @@ function DrillList() {
         <div className="max-w-2xl mx-auto px-5 py-16">
           <div className="mb-10">
             <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#22D3EE' }}>
-              Drill Modules
+              {lang === 'kr' ? '훈련 모듈' : 'Drill Modules'}
             </p>
-            <h1 className="text-3xl font-black mb-3" style={{ color: C.text }}>훈련 목록</h1>
-            <p className="text-sm" style={{ color: C.muted }}>원하는 훈련을 선택해 바로 시작하세요.</p>
+            <h1 className="text-3xl font-black mb-3" style={{ color: C.text }}>
+              {lang === 'kr' ? '훈련 목록' : 'Drill List'}
+            </h1>
+            <p className="text-sm" style={{ color: C.muted }}>
+              {lang === 'kr' ? '원하는 훈련을 선택해 바로 시작하세요.' : 'Choose a drill and start training right away.'}
+            </p>
           </div>
 
           <div className="flex flex-col gap-3">
             {DRILLS.map((drill) => (
-              <DrillCard key={drill.id} drill={drill} dark={dark} />
+              <DrillCard key={drill.id} drill={drill} dark={dark} lang={lang} />
             ))}
           </div>
         </div>

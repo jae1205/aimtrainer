@@ -454,7 +454,7 @@ function Home() {
                 {t.ctaDesc}
               </p>
               <div className="flex justify-center">
-                <AimButton onClick={() => setShowSetup(true)}>
+                <AimButton onClick={() => navigate('/drills')}>
                   {t.ctaBtn}
                 </AimButton>
               </div>

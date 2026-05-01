@@ -214,7 +214,7 @@ function Layout({ children, isTestPage = false }) {
               onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
               onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
             >
-              훈련목록
+              {lang === 'kr' ? '훈련목록' : 'Drills'}
             </button>
           </div>
 
