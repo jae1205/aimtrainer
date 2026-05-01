@@ -41,7 +41,7 @@ export const translations = {
     feat1Title: '다양한 훈련 모드',
     feat1Desc: '트래킹, 클릭 타이밍, 스위칭 — 유형별 훈련으로 에임의 약점을 집중적으로 보완하세요.',
     feat2Title: '내 마음대로 커스텀',
-    feat2Desc: '공의 크기·속도·체력, 감도까지 원하는 대로 조절해 나만의 훈련 환경을 만드세요.',
+    feat2Desc: '공 색상·크기·수·궤적, 감도까지 원하는 대로 조절해 나만의 훈련 환경을 만드세요.',
     feat3Title: '완전 무료',
     feat3Desc: '설치도, 로그인도 필요 없습니다. 브라우저에서 바로 시작하세요.',
 
@@ -183,7 +183,7 @@ export const translations = {
     feat1Title: 'Precise Data Analysis',
     feat1Desc: 'Tracking, click timing, switching — drill each aim type to fix your weaknesses fast.',
     feat2Title: 'Instant Feedback',
-    feat2Desc: 'See exactly whether your sensitivity fits your playstyle as soon as the drill ends.',
+    feat2Desc: 'Adjust ball color, size, count, arc height, and sensitivity to build your perfect training setup.',
     feat3Title: 'Completely Free',
     feat3Desc: 'No install, no login. Just open your browser and start training.',
 
