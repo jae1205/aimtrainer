@@ -131,8 +131,12 @@ function Scene({ sensitivity, active, onDestroy, theme }) {
       if (!group) continue
 
       arc.t += delta * arc.speed
-      if (arc.t >= 1) resetBall(i)
-      group.position.copy(bezierPos(arc, Math.min(arc.t, 1)))
+      const pos = bezierPos(arc, Math.min(arc.t, 1))
+      if (arc.t >= 1 || (arc.t > 0.5 && Math.abs(pos.x) >= WALL_X)) {
+        resetBall(i)
+        continue
+      }
+      group.position.copy(pos)
 
       // Billboard: copy camera quaternion so bar always faces player
       if (bg) bg.quaternion.copy(camera.quaternion)
