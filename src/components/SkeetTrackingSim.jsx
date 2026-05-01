@@ -40,11 +40,7 @@ const BALL_SPEED_OPTIONS = [
   { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 1.0 },
   { key: 'fast', labelKr: '빠르게', labelEn: 'Fast', value: 1.5 },
 ]
-const BALL_HP_OPTIONS = [
-  { key: 'low', labelKr: '적게', labelEn: 'Low', value: 0.7 },
-  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 1.0 },
-  { key: 'high', labelKr: '많게', labelEn: 'High', value: 2.0 },
-]
+const BALL_HP_FIXED = 0.7
 
 function makeArc(dir) {
   const d = dir ?? (Math.random() > 0.5 ? 1 : -1)
@@ -298,7 +294,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [sensInput, setSensInput] = useState('')
   const [ballSize,  setBallSize]  = useState(0.20)
   const [ballSpeed, setBallSpeed] = useState(1.0)
-  const [ballHP,    setBallHP]    = useState(1.0)
+  const ballHP = BALL_HP_FIXED
   const [ballColor, setBallColor] = useState(BALL_COLORS[0].value)
   const [localDpi, setLocalDpi] = useState(() => {
     const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
@@ -534,7 +530,6 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               { label: lang === 'kr' ? '공 색상' : 'Ball Color', options: BALL_COLORS,      current: ballColor,  set: setBallColor,  colorMode: true },
               { label: lang === 'kr' ? '공 크기' : 'Ball Size',  options: BALL_SIZE_OPTIONS, current: ballSize,   set: setBallSize,   colorMode: false },
               { label: lang === 'kr' ? '공 속도' : 'Ball Speed', options: BALL_SPEED_OPTIONS,current: ballSpeed,  set: setBallSpeed,  colorMode: false },
-              { label: lang === 'kr' ? '공 체력' : 'Ball HP',    options: BALL_HP_OPTIONS,   current: ballHP,     set: setBallHP,     colorMode: false },
             ].map(({ label, options, current, set, colorMode }) => (
               <div key={label}>
                 <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1.5 ${sub}`}>{label}</p>
