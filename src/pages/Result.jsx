@@ -147,7 +147,7 @@ function Result() {
                 <p className={`text-lg font-black ${text}`}>{userSetup.dpi}</p>
               </div>
               <div className="text-center">
-                <p className={`text-xs mb-0.5 ${muted}`}>{t.valoSensLabel}</p>
+                <p className={`text-xs mb-0.5 ${muted}`}>{t.inGameSensLabel}</p>
                 <p className={`text-lg font-black ${text}`}>{userSetup.valorantSens}</p>
               </div>
               <div className="text-center">
