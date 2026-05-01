@@ -352,7 +352,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                 window.dispatchEvent(new CustomEvent('test-start'))
                 requestLock()
               }}
-              className="px-10 py-4 rounded-2xl bg-[#ff4655] text-white font-bold hover:bg-[#ff4655]/90 transition-all hover:scale-105 shadow-lg shadow-red-500/20"
+              className="px-8 py-3 rounded-2xl bg-[#22D3EE] text-[#0A0F1E] font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-105 shadow-lg shadow-cyan-500/20"
             >
               시작
             </button>
