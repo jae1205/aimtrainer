@@ -68,7 +68,7 @@ function Test1() {
 
   const handleComplete = (data) => {
     localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier }))
-    navigate('/test2')
+    navigate('/drills')
   }
 
   const { t } = useLanguage()
