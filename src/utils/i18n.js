@@ -19,7 +19,7 @@ export const translations = {
     heroLine1: '지금 당신의',
     heroLine2: '에임을',
     heroLine3: '다음 레벨로',
-    heroSubtitle: '플리킹, 회전 제어, 탭샷 — 3가지 훈련으로\n에임의 약점을 찾고 빠르게 실력을 끌어올리세요.',
+    heroSubtitle: '다양한 훈련으로 에임의 약점을 찾고 빠르게 실력을 끌어올리세요.',
     freeDuration: '무료 · 3분 소요',
 
     // Home – Test cards
