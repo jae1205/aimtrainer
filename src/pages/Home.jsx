@@ -378,7 +378,7 @@ function Home() {
             dark ? 'bg-[#111827]/80 border-[#1E293B]' : 'bg-white/80 border-[#BAE6FD]'
           }`}>
             {[
-              { value: '5', label: dark ? '훈련 모듈' : 'Drill Modules' },
+              { value: '1', label: dark ? '훈련 모듈' : 'Drill Modules' },
               { value: '100%', label: dark ? '무료' : 'Free' },
             ].map((stat, i) => (
               <div key={i} className="text-center">

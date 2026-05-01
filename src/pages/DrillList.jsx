@@ -19,36 +19,6 @@ const DRILLS = [
       </svg>
     ),
   },
-  {
-    id: 2,
-    path: '/test2',
-    title: { kr: '플리킹', en: 'Flicking' },
-    desc: {
-      kr: '좌우로 나타나는 타겟을 빠르게 조준해 플릭 정확도를 측정합니다.',
-      en: 'Quickly aim at targets appearing left and right to measure flick accuracy.',
-    },
-    tag: 'Flicking',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-      </svg>
-    ),
-  },
-  {
-    id: 3,
-    path: '/test3',
-    title: { kr: '탭샷', en: 'Tap Shot' },
-    desc: {
-      kr: '순서대로 나타나는 타겟을 빠르게 클릭해 반응속도와 정확도를 측정합니다.',
-      en: 'Click targets as they appear to measure reaction speed and accuracy.',
-    },
-    tag: 'Tap Shot',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
 ]
 
 function DrillCard({ drill, dark, lang }) {
