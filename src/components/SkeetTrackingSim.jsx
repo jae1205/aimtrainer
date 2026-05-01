@@ -31,9 +31,9 @@ const BALL_COLORS = [
   { key: 'blue', labelKr: '파랑', labelEn: 'Blue', value: '#3b82f6' },
 ]
 const BALL_SIZE_OPTIONS = [
-  { key: 'small', labelKr: '작게', labelEn: 'Small', value: 0.014 },
-  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.02 },
-  { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.032 },
+  { key: 'small', labelKr: '작게', labelEn: 'Small', value: 0.126 },
+  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.18 },
+  { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.288 },
 ]
 const BALL_SPEED_FIXED = 0.8
 const BALL_HP_FIXED    = 0.7
