@@ -11,7 +11,7 @@ import * as THREE from 'three'
 const CAMERA_CONFIG = { position: [0, 0, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
 const DURATION = 60
-const NUM_BALLS = 4
+const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
 const BAR_W = BALL_RADIUS * 2.25
@@ -35,21 +35,32 @@ const BALL_SIZE_OPTIONS = [
   { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.2 },
   { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.32 },
 ]
-const BALL_SPEED_OPTIONS = [
-  { key: 'slow', labelKr: '느리게', labelEn: 'Slow', value: 0.7 },
-  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 1.0 },
-  { key: 'fast', labelKr: '빠르게', labelEn: 'Fast', value: 1.5 },
+const BALL_SPEED_FIXED = 1.0
+const BALL_HP_FIXED    = 0.7
+const BALL_COUNT_OPTIONS = [
+  { key: '2', labelKr: '2개', labelEn: '2', value: 2 },
+  { key: '4', labelKr: '4개', labelEn: '4', value: 4 },
+  { key: '6', labelKr: '6개', labelEn: '6', value: 6 },
 ]
-const BALL_HP_FIXED = 0.7
+const ARC_HEIGHT_CFG = {
+  low:    { min: 0.3, range: 0.7 },
+  medium: { min: 1.5, range: 1.8 },
+  high:   { min: 3.0, range: 2.0 },
+}
+const ARC_HEIGHT_OPTIONS = [
+  { key: 'low',    labelKr: '낮음', labelEn: 'Low',    value: 'low' },
+  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 'medium' },
+  { key: 'high',   labelKr: '높음', labelEn: 'High',   value: 'high' },
+]
 
-function makeArc(dir) {
+function makeArc(dir, arcCfg = ARC_HEIGHT_CFG.medium) {
   const d = dir ?? (Math.random() > 0.5 ? 1 : -1)
   return {
     t: Math.random() * 0.8,
     speed: 0.2 + Math.random() * 0.15,
     p0: new THREE.Vector3(d * -(WALL_X + 1.2), -0.2 + (Math.random() - 0.5) * 1.2, -7),
     p2: new THREE.Vector3(d *  (WALL_X + 1.2), -0.2 + (Math.random() - 0.5) * 1.2, -7),
-    peakY: 1.5 + Math.random() * 1.8,
+    peakY: arcCfg.min + Math.random() * arcCfg.range,
   }
 }
 
@@ -112,7 +123,7 @@ function hpColor(hp) {
   return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2).clone()
 }
 
-function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS, ballColor = '#ff4655' }) {
+function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS, ballColor = '#ff4655', numBalls = 4, arcHeightCfg = ARC_HEIGHT_CFG.medium }) {
   const barW = ballRadius * 2.25
   const barH = ballRadius * 0.45
   const barY = ballRadius + 0.2
@@ -122,14 +133,14 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
   const hpFills = useRef([])   // fill bar planes
   const barGroups = useRef([]) // bar groups (for billboard)
 
-  const arcs    = useRef(Array.from({ length: NUM_BALLS }, (_, i) => makeArc(i % 2 === 0 ? 1 : -1)))
-  const hp      = useRef(Array(NUM_BALLS).fill(1.0))
-  const beep    = useRef(Array.from({ length: NUM_BALLS }, () => ({ last: -1 })))
+  const arcs    = useRef(Array.from({ length: NUM_BALLS_MAX }, (_, i) => makeArc(i % 2 === 0 ? 1 : -1, arcHeightCfg)))
+  const hp      = useRef(Array(NUM_BALLS_MAX).fill(1.0))
+  const beep    = useRef(Array.from({ length: NUM_BALLS_MAX }, () => ({ last: -1 })))
 
   const { camera, raycaster } = useThree()
 
   const resetBall = useCallback((idx) => {
-    arcs.current[idx] = { ...makeArc(), t: 0 }
+    arcs.current[idx] = { ...makeArc(null, arcHeightCfg), t: 0 }
     hp.current[idx] = 1.0
     beep.current[idx].last = -1
     const fill = hpFills.current[idx]
@@ -138,13 +149,13 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
       fill.position.x = 0
       fill.material.color.copy(GREEN)
     }
-  }, [])
+  }, [arcHeightCfg])
 
   useFrame((_, delta) => {
     if (!active) return
 
     // ── Move balls + billboard bars ──────────────────────────────
-    for (let i = 0; i < NUM_BALLS; i++) {
+    for (let i = 0; i < numBalls; i++) {
       const arc   = arcs.current[i]
       const group = groups.current[i]
       const bg    = barGroups.current[i]
@@ -172,7 +183,7 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
     )
 
     // ── Update HP ────────────────────────────────────────────────
-    for (let i = 0; i < NUM_BALLS; i++) {
+    for (let i = 0; i < numBalls; i++) {
       const fill = hpFills.current[i]
       if (!fill) continue
 
@@ -245,7 +256,7 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
         <meshStandardMaterial color={theme === 'dark' ? '#1a3550' : '#e0f2fe'} roughness={0.9} />
       </mesh>
 
-      {Array.from({ length: NUM_BALLS }, (_, i) => (
+      {Array.from({ length: numBalls }, (_, i) => (
         <group key={i} ref={el => { groups.current[i] = el }}>
           {/* Ball sphere */}
           <mesh ref={el => { spheres.current[i] = el }}>
@@ -293,8 +304,11 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [sensEditing, setSensEditing] = useState(false)
   const [sensInput, setSensInput] = useState('')
   const [ballSize,  setBallSize]  = useState(0.20)
-  const [ballSpeed, setBallSpeed] = useState(1.0)
-  const ballHP = BALL_HP_FIXED
+  const ballSpeed = BALL_SPEED_FIXED
+  const ballHP    = BALL_HP_FIXED
+  const [numBalls,   setNumBalls]   = useState(4)
+  const [arcHeight,  setArcHeight]  = useState('medium')
+  const arcHeightCfg = ARC_HEIGHT_CFG[arcHeight]
   const [ballColor, setBallColor] = useState(BALL_COLORS[0].value)
   const [localDpi, setLocalDpi] = useState(() => {
     const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
@@ -527,9 +541,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">{lang === 'kr' ? '커스텀 설정' : 'Custom'}</p>
 
             {[
-              { label: lang === 'kr' ? '공 색상' : 'Ball Color', options: BALL_COLORS,      current: ballColor,  set: setBallColor,  colorMode: true },
-              { label: lang === 'kr' ? '공 크기' : 'Ball Size',  options: BALL_SIZE_OPTIONS, current: ballSize,   set: setBallSize,   colorMode: false },
-              { label: lang === 'kr' ? '공 속도' : 'Ball Speed', options: BALL_SPEED_OPTIONS,current: ballSpeed,  set: setBallSpeed,  colorMode: false },
+              { label: lang === 'kr' ? '공 색상' : 'Ball Color', options: BALL_COLORS,       current: ballColor,  set: setBallColor,  colorMode: true },
+              { label: lang === 'kr' ? '공 크기' : 'Ball Size',  options: BALL_SIZE_OPTIONS,  current: ballSize,   set: setBallSize,   colorMode: false },
+              { label: lang === 'kr' ? '공 수'   : 'Ball Count', options: BALL_COUNT_OPTIONS, current: numBalls,   set: setNumBalls,   colorMode: false },
+              { label: lang === 'kr' ? '공 궤적' : 'Arc Height', options: ARC_HEIGHT_OPTIONS, current: arcHeight,  set: setArcHeight,  colorMode: false },
             ].map(({ label, options, current, set, colorMode }) => (
               <div key={label}>
                 <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1.5 ${sub}`}>{label}</p>
@@ -599,6 +614,8 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               drainMult={ballHP}
               ballRadius={ballSize}
               ballColor={ballColor}
+              numBalls={numBalls}
+              arcHeightCfg={arcHeightCfg}
             />
           </>
         )}
