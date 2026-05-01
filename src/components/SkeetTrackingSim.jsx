@@ -494,9 +494,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
 
       {/* 시작 모달 */}
       {!started && !completed && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center gap-4 bg-black/60 backdrop-blur-sm px-6">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+          <div className="flex items-stretch gap-4">
           {/* 왼쪽 — 감도 설정 */}
-          <div className={`p-5 rounded-3xl border shadow-2xl w-56 shrink-0 flex flex-col gap-4 ${panelCls}`}>
+          <div className={`p-4 rounded-3xl border shadow-2xl w-56 shrink-0 flex flex-col gap-3 ${panelCls}`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">{lang === 'kr' ? '감도 설정' : 'Sensitivity'}</p>
 
             {/* DPI */}
@@ -575,7 +576,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             </div>
 
             {/* 통계 */}
-            <div className="mt-auto pt-3 border-t" style={{ borderColor: theme === 'light' ? '#E2E8F0' : '#1E293B' }}>
+            <div className="mt-auto pt-2.5 border-t" style={{ borderColor: theme === 'light' ? '#E2E8F0' : '#1E293B' }}>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between items-center">
                   <span className={sub}>eDPI</span>
@@ -593,10 +594,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             </div>
           </div>
 
-          <div className={`text-center p-8 rounded-3xl border shadow-2xl shrink-0 h-[384px] flex flex-col justify-center ${panelCls}`} style={{ width: 380 }}>
+          <div className={`text-center p-6 rounded-3xl border shadow-2xl shrink-0 flex flex-col justify-center ${panelCls}`} style={{ width: 360 }}>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#22D3EE] mb-2">SKEET TRACKING</p>
-            <h2 className="text-4xl font-black mb-3 text-[#22D3EE]">{lang === 'kr' ? '스키트 트래킹' : 'Skeet Tracking'}</h2>
-            <p className={`text-sm mb-8 leading-relaxed ${sub}`}>
+            <h2 className="text-3xl font-black mb-2.5 text-[#22D3EE]">{lang === 'kr' ? '스키트 트래킹' : 'Skeet Tracking'}</h2>
+            <p className={`text-sm mb-5 leading-relaxed ${sub}`}>
               {lang === 'kr' ? '호를 그리며 날아가는 타겟에 크로스헤어를 올리면 체력이 깎입니다.' : 'Track the moving balls with your crosshair to drain their health.'}<br />
               {lang === 'kr' ? '60초 동안 최대한 많이 파괴하세요.' : 'Destroy as many targets as possible in 60 seconds.'}
             </p>
@@ -613,14 +614,14 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                 window.dispatchEvent(new CustomEvent('test-start'))
                 requestLock()
               }}
-              className="px-10 py-4 rounded-2xl bg-[#22D3EE] text-[#0A0F1E] font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-105 shadow-lg shadow-cyan-500/20"
+              className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0A0F1E] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
             >
               {lang === 'kr' ? '시작' : 'Start'}
             </button>
           </div>
 
           {/* 오른쪽 — 커스텀 설정 */}
-          <div className={`p-5 rounded-3xl border shadow-2xl w-56 shrink-0 flex flex-col gap-4 ${panelCls}`}>
+          <div className={`p-4 rounded-3xl border shadow-2xl w-56 shrink-0 flex flex-col gap-3 ${panelCls}`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">{lang === 'kr' ? '커스텀 설정' : 'Custom'}</p>
 
             {[
@@ -653,6 +654,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               </div>
             ))}
           </div>
+        </div>
         </div>
       )}
       {started && !isPointerLocked && !completed && (
