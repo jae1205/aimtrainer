@@ -376,14 +376,14 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                 {sensEditing ? (
                   <input
                     autoFocus
-                    type="number" min="0.1" max="2.0" step="0.01"
+                    type="number" min="0.1" max="1.0" step="0.01"
                     value={sensInput}
                     onChange={(e) => setSensInput(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                     onBlur={(e) => {
                       e.stopPropagation()
                       const v = parseFloat(sensInput)
-                      if (!isNaN(v)) handleSensChange(parseFloat(Math.min(2.0, Math.max(0.1, v)).toFixed(2)))
+                      if (!isNaN(v)) handleSensChange(parseFloat(Math.min(1.0, Math.max(0.1, v)).toFixed(2)))
                       setSensEditing(false)
                     }}
                     onKeyDown={(e) => {
@@ -400,7 +400,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                 )}
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); handleSensChange(parseFloat(Math.min(2.0, localSens + 0.01).toFixed(2))) }}
+                  onClick={(e) => { e.stopPropagation(); handleSensChange(parseFloat(Math.min(1.0, localSens + 0.01).toFixed(2))) }}
                   className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
                   style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
                 >+</button>
@@ -410,9 +410,9 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             {/* 슬라이더 */}
             <div className="relative h-5 flex items-center mb-3">
               <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#BAE6FD' : '#1E293B' }} />
-              <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${((localSens - 0.1) / 1.9) * 100}%` }} />
+              <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${((localSens - 0.1) / 0.9) * 100}%` }} />
               <input
-                type="range" min="0.1" max="2.0" step="0.01" value={localSens}
+                type="range" min="0.1" max="1.0" step="0.01" value={localSens}
                 onChange={(e) => handleSensChange(parseFloat(e.target.value))}
                 onClick={(e) => e.stopPropagation()}
                 className="absolute w-full h-full opacity-0 cursor-pointer"
@@ -424,7 +424,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             </div>
             <div className="flex justify-between">
               <span className={`text-[10px] ${sub}`}>0.10</span>
-              <span className={`text-[10px] ${sub}`}>2.00</span>
+              <span className={`text-[10px] ${sub}`}>1.00</span>
             </div>
           </div>
 
