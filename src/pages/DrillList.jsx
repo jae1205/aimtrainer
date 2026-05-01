@@ -7,7 +7,7 @@ const DRILLS = [
     id: 1,
     path: '/test1',
     title: '스키트 트래킹',
-    desc: '호를 그리며 날아가는 타겟을 30초간 추적해 트래킹 정확도를 측정합니다.',
+    desc: '호를 그리며 날아가는 타겟을 60초간 추적해 트래킹 정확도를 측정합니다.',
     tag: 'Tracking',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
