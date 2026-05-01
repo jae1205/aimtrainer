@@ -95,7 +95,7 @@ function hpColor(hp) {
   return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2).clone()
 }
 
-function Scene({ sensitivity, active, onDestroy, theme }) {
+function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1 }) {
   const groups  = useRef([])   // group per ball
   const spheres = useRef([])   // sphere meshes (for raycasting)
   const hpBgs   = useRef([])   // background bar planes
@@ -130,7 +130,7 @@ function Scene({ sensitivity, active, onDestroy, theme }) {
       const bg    = barGroups.current[i]
       if (!group) continue
 
-      arc.t += delta * arc.speed
+      arc.t += delta * arc.speed * speedMult
       const pos = bezierPos(arc, Math.min(arc.t, 1))
       if (arc.t >= 1 || (arc.t > 0.5 && Math.abs(pos.x) >= WALL_X)) {
         resetBall(i)
@@ -162,7 +162,7 @@ function Scene({ sensitivity, active, onDestroy, theme }) {
       }
 
       // Drain HP
-      hp.current[i] = Math.max(0, hp.current[i] - delta / DRAIN_TIME)
+      hp.current[i] = Math.max(0, hp.current[i] - delta / (DRAIN_TIME * drainMult))
       const h = hp.current[i]
       const dmgPct = 1 - h
 
@@ -268,10 +268,28 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const containerRef  = useRef(null)
   const finalScoreRef = useRef(0)
 
+  const [localSens, setLocalSens] = useState(sensitivity)
+  const [difficulty, setDifficulty] = useState('normal')
+
+  const DIFFICULTIES = [
+    { key: 'easy',   label: '쉬움',   speedMult: 0.7,  drainMult: 1.5, desc: '느린 공 · 긴 체력' },
+    { key: 'normal', label: '보통',   speedMult: 1.0,  drainMult: 1.0, desc: '기본 설정' },
+    { key: 'hard',   label: '어려움', speedMult: 1.35, drainMult: 0.7, desc: '빠른 공 · 짧은 체력' },
+  ]
+  const currentDiff = DIFFICULTIES.find(d => d.key === difficulty)
+
+  const handleSensChange = (val) => {
+    setLocalSens(val)
+    const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
+    setup.valorantSens = val
+    localStorage.setItem('userSetup', JSON.stringify(setup))
+  }
+
   const bg       = theme === 'dark' ? 'bg-[#060D18]' : 'bg-[#f0f9ff]'
   const panelCls = theme === 'light'
     ? 'bg-white/95 border-[#DDD8D2] text-[#1A1F2E]'
     : 'bg-[#1B2E3D] border-[#2A3D4F] text-[#ECE8E1]'
+  const sub = theme === 'light' ? 'text-[#1A1F2E]/60' : 'text-[#ECE8E1]/60'
 
   useEffect(() => { onStatsChange?.({ score, timeLeft }) }, [score, timeLeft, onStatsChange])
 
@@ -337,8 +355,37 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
 
       {/* 시작 모달 */}
       {!started && !completed && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className={`text-center p-8 rounded-3xl border shadow-2xl max-w-md ${panelCls}`}>
+        <div className="absolute inset-0 z-30 flex items-center justify-center gap-4 bg-black/60 backdrop-blur-sm px-6">
+
+          {/* 왼쪽 — 감도 설정 */}
+          <div className={`p-6 rounded-3xl border shadow-2xl w-52 shrink-0 ${panelCls}`}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">감도 설정</p>
+            <div className="flex items-baseline justify-between mb-3">
+              <span className={`text-xs font-semibold ${sub}`}>발로란트 감도</span>
+              <span className="text-lg font-black text-[#22D3EE]">{localSens.toFixed(2)}</span>
+            </div>
+            <div className="relative h-5 flex items-center mb-4">
+              <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#BAE6FD' : '#1E293B' }} />
+              <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${((localSens - 0.1) / 1.9) * 100}%` }} />
+              <input
+                type="range" min="0.1" max="2.0" step="0.05" value={localSens}
+                onChange={(e) => handleSensChange(parseFloat(e.target.value))}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute w-full h-full opacity-0 cursor-pointer"
+              />
+              <div
+                className="absolute w-3.5 h-3.5 rounded-full border-2 border-white bg-[#22D3EE] pointer-events-none shadow"
+                style={{ left: `calc(${((localSens - 0.1) / 1.9) * 100}% - 7px)` }}
+              />
+            </div>
+            <div className="flex justify-between">
+              <span className={`text-[10px] ${sub}`}>0.10</span>
+              <span className={`text-[10px] ${sub}`}>2.00</span>
+            </div>
+          </div>
+
+          {/* 가운데 — 기존 모달 */}
+          <div className={`text-center p-8 rounded-3xl border shadow-2xl shrink-0 ${panelCls}`} style={{ width: 380 }}>
             <h2 className="text-3xl font-black mb-4">스키트 트래킹</h2>
             <p className={`mb-6 leading-relaxed ${theme === 'light' ? 'text-[#1A1F2E]/70' : 'text-[#ECE8E1]/70'}`}>
               호를 그리며 날아가는 타겟에 크로스헤어를 올리면<br />
@@ -358,6 +405,30 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               시작
             </button>
           </div>
+
+          {/* 오른쪽 — 난이도 설정 */}
+          <div className={`p-6 rounded-3xl border shadow-2xl w-52 shrink-0 ${panelCls}`}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">난이도 설정</p>
+            <div className="flex flex-col gap-2 mb-4">
+              {DIFFICULTIES.map((d) => (
+                <button
+                  key={d.key}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setDifficulty(d.key) }}
+                  className="w-full py-2 px-3 rounded-xl border text-sm font-bold text-left transition-all"
+                  style={{
+                    background: difficulty === d.key ? '#22D3EE' : 'transparent',
+                    borderColor: difficulty === d.key ? '#22D3EE' : (theme === 'light' ? '#BAE6FD' : '#1E293B'),
+                    color: difficulty === d.key ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
+                  }}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            <p className={`text-[11px] text-center ${sub}`}>{currentDiff?.desc}</p>
+          </div>
+
         </div>
       )}
 
@@ -395,10 +466,12 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
           <>
             <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
             <Scene
-              sensitivity={sensitivity}
+              sensitivity={localSens}
               active={countdown === 0 && !completed && isPointerLocked}
               onDestroy={() => setScore(s => s + 1)}
               theme={theme}
+              speedMult={currentDiff?.speedMult ?? 1}
+              drainMult={currentDiff?.drainMult ?? 1}
             />
           </>
         )}
