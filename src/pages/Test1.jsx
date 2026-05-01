@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Layout from '../components/Layout'
 import SkeetTrackingSim from '../components/SkeetTrackingSim'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -22,21 +22,17 @@ function Test1() {
 
   const theme = resolveTheme(themeMode)
 
-  // 감도 설정 읽기 (Home에서 저장한 값)
   const userSetup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
   const sensitivityMultiplier = userSetup.valorantSens
 
   useEffect(() => {
-    const handleThemeChange = (e) => {
-      setThemeMode(e.detail)
-    }
+    const handleThemeChange = (e) => { setThemeMode(e.detail) }
     window.addEventListener('theme-change', handleThemeChange)
-    return () => {
-      window.removeEventListener('theme-change', handleThemeChange)
-    }
+    return () => window.removeEventListener('theme-change', handleThemeChange)
   }, [])
 
   const [score, setScore] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(60)
   const [simActive, setSimActive] = useState(false)
 
   useEffect(() => {
@@ -50,6 +46,26 @@ function Test1() {
     }
   }, [])
 
+  // FPS 측정
+  const [fps, setFps] = useState(0)
+  const rafRef = useRef(null)
+  useEffect(() => {
+    let frameCount = 0
+    let lastTime = performance.now()
+    const loop = () => {
+      frameCount++
+      const now = performance.now()
+      if (now - lastTime >= 500) {
+        setFps(Math.round(frameCount * 1000 / (now - lastTime)))
+        frameCount = 0
+        lastTime = now
+      }
+      rafRef.current = requestAnimationFrame(loop)
+    }
+    rafRef.current = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
+
   const handleComplete = (data) => {
     localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier }))
     navigate('/test2')
@@ -57,6 +73,10 @@ function Test1() {
 
   const { t } = useLanguage()
   const sub = theme === 'light' ? 'text-slate-500' : 'text-slate-400'
+  const boxCls = `px-5 py-2.5 rounded-2xl border backdrop-blur-md shadow-lg flex items-center gap-3 ${
+    theme === 'light' ? 'bg-white/95 border-[#DDD8D2]' : 'bg-[#1B2E3D]/90 border-[#2A3D4F]'
+  }`
+  const valCls = `text-xl font-black ${theme === 'light' ? 'text-slate-900' : 'text-white'}`
 
   return (
     <Layout isTestPage={true}>
@@ -65,21 +85,44 @@ function Test1() {
           theme === 'light' ? 'bg-[#F5F0EA]' : 'bg-[#0F1923]'
         } w-full flex-1 flex items-center justify-center`}
       >
-        <SkeetTrackingSim onComplete={handleComplete} sensitivity={sensitivityMultiplier} theme={theme} onStatsChange={({ score: s }) => setScore(s)} />
+        <SkeetTrackingSim
+          onComplete={handleComplete}
+          sensitivity={sensitivityMultiplier}
+          theme={theme}
+          onStatsChange={({ score: s, timeLeft: t }) => { setScore(s); setTimeLeft(t) }}
+        />
 
-        {/* 파괴한 타겟 — 헤더 바로 아래 가운데, 시뮬레이션 중에만 표시 */}
-        <div className={`absolute top-14 left-1/2 -translate-x-1/2 z-[39] pointer-events-none transition-all duration-300 ${
+        {/* HUD — 헤더 바로 아래 가운데 */}
+        <div className={`absolute top-14 left-1/2 -translate-x-1/2 z-[39] pointer-events-none transition-all duration-300 flex gap-3 ${
           simActive ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
         }`}>
-          <div className={`px-5 py-2.5 rounded-2xl border backdrop-blur-md shadow-lg flex items-center gap-3 ${
-            theme === 'light' ? 'bg-white/95 border-[#DDD8D2]' : 'bg-[#1B2E3D]/90 border-[#2A3D4F]'
-          }`}>
+
+          {/* FPS */}
+          <div className={boxCls}>
+            <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>FPS</p>
+            <div className="flex items-baseline gap-1">
+              <span className={valCls}>{fps}</span>
+            </div>
+          </div>
+
+          {/* 파괴한 타겟 */}
+          <div className={boxCls}>
             <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>파괴한 타겟</p>
             <div className="flex items-baseline gap-1">
-              <span className={`text-xl font-black ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>{score}</span>
+              <span className={valCls}>{score}</span>
               <span className={`text-xs ${sub}`}>개</span>
             </div>
           </div>
+
+          {/* 남은 시간 */}
+          <div className={boxCls}>
+            <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>남은 시간</p>
+            <div className="flex items-baseline gap-1">
+              <span className={valCls}>{timeLeft}</span>
+              <span className={`text-xs ${sub}`}>초</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </Layout>
