@@ -123,7 +123,7 @@ function hpColor(hp) {
   return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2).clone()
 }
 
-function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS, ballColor = '#ff4655', numBalls = 4, arcHeightCfg = ARC_HEIGHT_CFG.medium }) {
+function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS, ballColor = '#ff4655', numBalls = 4, arcHeightCfg = ARC_HEIGHT_CFG.medium, statsRef }) {
   const barW = ballRadius * 2.25
   const barH = ballRadius * 0.45
   const barY = ballRadius + 0.2
@@ -133,9 +133,11 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
   const hpFills = useRef([])   // fill bar planes
   const barGroups = useRef([]) // bar groups (for billboard)
 
-  const arcs    = useRef(Array.from({ length: NUM_BALLS_MAX }, (_, i) => makeArc(i % 2 === 0 ? 1 : -1, arcHeightCfg)))
-  const hp      = useRef(Array(NUM_BALLS_MAX).fill(1.0))
-  const beep    = useRef(Array.from({ length: NUM_BALLS_MAX }, () => ({ last: -1 })))
+  const arcs         = useRef(Array.from({ length: NUM_BALLS_MAX }, (_, i) => makeArc(i % 2 === 0 ? 1 : -1, arcHeightCfg)))
+  const hp           = useRef(Array(NUM_BALLS_MAX).fill(1.0))
+  const beep         = useRef(Array.from({ length: NUM_BALLS_MAX }, () => ({ last: -1 })))
+  const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
+  const elapsed      = useRef(0)
 
   const { camera, raycaster } = useThree()
 
@@ -143,6 +145,7 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
     arcs.current[idx] = { ...makeArc(null, arcHeightCfg), t: 0 }
     hp.current[idx] = 1.0
     beep.current[idx].last = -1
+    firstContact.current[idx] = -1
     const fill = hpFills.current[idx]
     if (fill) {
       fill.scale.x = 1
@@ -153,6 +156,8 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
 
   useFrame((_, delta) => {
     if (!active) return
+
+    elapsed.current += delta
 
     // ── Move balls + billboard bars ──────────────────────────────
     for (let i = 0; i < numBalls; i++) {
@@ -182,6 +187,12 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
         .map(h => spheres.current.indexOf(h.object))
     )
 
+    // ── Stats: frame-level accuracy ───────────────────────────────
+    if (statsRef) {
+      statsRef.current.activeFrames++
+      if (hits.size > 0) statsRef.current.hitFrames++
+    }
+
     // ── Update HP ────────────────────────────────────────────────
     for (let i = 0; i < numBalls; i++) {
       const fill = hpFills.current[i]
@@ -192,9 +203,19 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
         continue
       }
 
+      // Track first contact for TTK
+      if (firstContact.current[i] === -1) {
+        firstContact.current[i] = elapsed.current
+      }
+
       // Drain HP
-      hp.current[i] = Math.max(0, hp.current[i] - delta / (DRAIN_TIME * drainMult))
+      const prevHp = hp.current[i]
+      const drainAmt = delta / (DRAIN_TIME * drainMult)
+      hp.current[i] = Math.max(0, prevHp - drainAmt)
       const h = hp.current[i]
+      const actualDrain = prevHp - h
+      if (statsRef) statsRef.current.totalDamage += actualDrain
+
       const dmgPct = 1 - h
 
       // Update fill bar (left-aligned)
@@ -212,6 +233,10 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
 
       // Dead
       if (h <= 0) {
+        if (statsRef && firstContact.current[i] >= 0) {
+          const ttk = elapsed.current - firstContact.current[i]
+          if (ttk > 0) statsRef.current.ttks.push(ttk)
+        }
         onDestroy()
         resetBall(i)
       }
@@ -299,6 +324,8 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [completed, setCompleted] = useState(false)
   const containerRef  = useRef(null)
   const finalScoreRef = useRef(0)
+  const statsRef = useRef({ hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [] })
+  const [finalStats, setFinalStats] = useState(null)
 
   const [localSens, setLocalSens] = useState(sensitivity)
   const [sensEditing, setSensEditing] = useState(false)
@@ -384,6 +411,21 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
     window.dispatchEvent(new CustomEvent('test-end'))
     finalScoreRef.current = score
     playComplete()
+
+    const st = statsRef.current
+    const kills = score
+    const kps = kills / DURATION
+    const accuracy = st.activeFrames > 0 ? (st.hitFrames / st.activeFrames) * 100 : 0
+    const damage = st.totalDamage
+    const spm = kills  // kills per minute (game is exactly 60 s)
+    const avgTtk = st.ttks.length > 0 ? st.ttks.reduce((a, b) => a + b, 0) / st.ttks.length : 0
+    const totalScore = Math.round(
+      kills * 500 +
+      accuracy * 20 +
+      (avgTtk > 0 ? (3 / avgTtk) * 100 : 0) +
+      damage * 80
+    )
+    setFinalStats({ kills, kps, accuracy, damage, spm, avgTtk, totalScore })
     setCompleted(true)
   }, [started, countdown, timeLeft, score])
 
@@ -394,19 +436,58 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       onClick={requestLock}
     >
       {/* 완료 */}
-      {completed && (
+      {completed && finalStats && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className={`text-center p-8 rounded-3xl border shadow-2xl max-w-sm w-full mx-4 ${panelCls}`}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#22D3EE] mb-2">{lang === 'kr' ? '결과' : 'Result'}</p>
-            <h2 className="text-5xl font-black mb-2 text-[#22D3EE]">{finalScoreRef.current}</h2>
-            <p className="text-sm text-slate-400 mb-6">{lang === 'kr' ? '파괴한 타겟 수' : 'Destroyed targets'}</p>
-            <button
-              type="button"
-              onClick={() => navigate('/drills')}
-              className="px-10 py-4 rounded-2xl bg-[#22D3EE] text-[#0A0F1E] font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-105 shadow-lg shadow-cyan-500/20"
-            >
-              {lang === 'kr' ? '목록으로' : 'Back to List'}
-            </button>
+          <div className={`rounded-3xl border shadow-2xl w-full mx-4 overflow-hidden ${panelCls}`} style={{ maxWidth: 640 }}>
+
+            {/* Header */}
+            <div className="px-8 pt-7 pb-5 text-center" style={{ borderBottom: `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` }}>
+              <p className="text-base font-bold uppercase tracking-widest text-[#22D3EE] mb-3">
+                {lang === 'kr' ? '스키트 트래킹 — 결과' : 'Skeet Tracking — Result'}
+              </p>
+              <p className={`text-xs font-semibold uppercase tracking-widest mb-2 ${sub}`}>
+                {lang === 'kr' ? '총 점수' : 'Total Score'}
+              </p>
+              <p className="text-7xl font-black text-[#22D3EE] tabular-nums leading-none">{finalStats.totalScore.toLocaleString()}</p>
+              <p className={`text-sm mt-2 font-semibold ${sub}`}>{lang === 'kr' ? '점' : 'pts'}</p>
+            </div>
+
+            {/* Metrics — 3 × 2 grid */}
+            <div className="grid grid-cols-3" style={{ borderBottom: `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` }}>
+              {[
+                { labelKr: '킬 수',           labelEn: 'Kill Count', value: String(finalStats.kills),                                    unit: 'kill' },
+                { labelKr: '초당 킬',          labelEn: 'KPS',        value: finalStats.kps.toFixed(2),                                   unit: '/s' },
+                { labelKr: '정확도',           labelEn: 'Accuracy',   value: finalStats.accuracy.toFixed(1),                             unit: '%' },
+                { labelKr: '데미지',           labelEn: 'Damage',     value: finalStats.damage.toFixed(1),                               unit: 'HP' },
+                { labelKr: '분당 킬',          labelEn: 'SPM',        value: String(finalStats.spm),                                      unit: '/min' },
+                { labelKr: '평균 처치 시간',   labelEn: 'Avg TTK',    value: finalStats.avgTtk > 0 ? finalStats.avgTtk.toFixed(2) : '—', unit: finalStats.avgTtk > 0 ? 's' : '' },
+              ].map(({ labelKr, labelEn, value, unit }, idx) => {
+                const label = lang === 'kr' ? labelKr : labelEn
+                const col = idx % 3
+                const row = Math.floor(idx / 3)
+                const borderR = col < 2 ? `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` : 'none'
+                const borderT = row > 0 ? `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` : 'none'
+                return (
+                  <div key={label} className="flex flex-col items-center justify-center py-5 gap-1"
+                    style={{ borderRight: borderR, borderTop: borderT }}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-widest ${sub}`}>{label}</p>
+                    <p className="text-3xl font-black text-[#22D3EE] tabular-nums leading-none">{value}</p>
+                    <p className={`text-[11px] font-medium ${sub}`}>{unit}</p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Footer button */}
+            <div className="px-8 py-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => navigate('/drills')}
+                className="px-8 py-2 rounded-xl bg-[#22D3EE] text-[#0A0F1E] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
+              >
+                {lang === 'kr' ? '목록으로' : 'Back to List'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -523,6 +604,8 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
+                statsRef.current = { hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [] }
+                setFinalStats(null)
                 setStarted(true)
                 setCountdown(3)
                 setScore(0)
@@ -616,6 +699,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               ballColor={ballColor}
               numBalls={numBalls}
               arcHeightCfg={arcHeightCfg}
+              statsRef={statsRef}
             />
           </>
         )}
