@@ -106,14 +106,14 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
   const barGroups = useRef([]) // bar groups (for billboard)
 
   const arcs    = useRef(Array.from({ length: NUM_BALLS }, (_, i) => makeArc(i % 2 === 0 ? 1 : -1)))
-  const hp      = useRef(Array(NUM_BALLS).fill(0.49))
+  const hp      = useRef(Array(NUM_BALLS).fill(1.0))
   const beep    = useRef(Array.from({ length: NUM_BALLS }, () => ({ last: -1 })))
 
   const { camera, raycaster } = useThree()
 
   const resetBall = useCallback((idx) => {
     arcs.current[idx] = { ...makeArc(), t: 0 }
-    hp.current[idx] = 0.49
+    hp.current[idx] = 1.0
     beep.current[idx].last = -1
     const fill = hpFills.current[idx]
     if (fill) {
