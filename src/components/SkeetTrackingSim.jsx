@@ -404,43 +404,37 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       {/* 시작 모달 */}
       {!started && !completed && (
         <div className="absolute inset-0 z-30 flex items-center justify-center gap-4 bg-black/60 backdrop-blur-sm px-6">
-          <div className={`p-6 rounded-3xl border shadow-2xl w-56 h-[384px] shrink-0 flex flex-col ${panelCls}`}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">{lang === 'kr' ? '감도 설정' : 'Sensitivity'}</p>
+          {/* 왼쪽 — 감도 설정 */}
+          <div className={`p-5 rounded-3xl border shadow-2xl w-56 shrink-0 flex flex-col gap-4 ${panelCls}`}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">{lang === 'kr' ? '감도 설정' : 'Sensitivity'}</p>
 
-            <div className="mb-5">
-              <label className={`block text-[10px] font-semibold mb-2 uppercase tracking-wide ${sub}`}>DPI</label>
-              <div className="grid grid-cols-2 gap-2">
+            {/* DPI */}
+            <div>
+              <p className={`text-[10px] font-semibold uppercase tracking-wide mb-2 ${sub}`}>DPI</p>
+              <div className="grid grid-cols-2 gap-1.5">
                 {[400, 800, 1600, 3200].map(dpi => (
                   <button
                     key={dpi}
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleDpiChange(dpi) }}
-                    className={`py-2 rounded-lg text-xs font-bold border transition-all ${
-                      localDpi === dpi
-                        ? 'bg-[#22D3EE] border-[#22D3EE] text-[#0A0F1E]'
-                        : theme === 'light'
-                          ? 'border-[#BAE6FD] text-[#1A1F2E] hover:border-[#22D3EE]'
-                          : 'border-[#334155] text-[#ECE8E1] hover:border-[#22D3EE]'
-                    }`}
-                  >
-                    {dpi}
-                  </button>
+                    className="py-1.5 rounded-lg text-xs font-bold border transition-all"
+                    style={{
+                      background: localDpi === dpi ? '#22D3EE' : 'transparent',
+                      borderColor: localDpi === dpi ? '#22D3EE' : (theme === 'light' ? '#CBD5E1' : '#334155'),
+                      color: localDpi === dpi ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
+                    }}
+                  >{dpi}</button>
                 ))}
               </div>
             </div>
 
-            <div className="mb-5">
-              <div className="flex justify-between items-center mb-2">
-                <label className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>
-                  {lang === 'kr' ? '감도' : 'Sens'}
-                </label>
+            {/* 감도 슬라이더 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>{lang === 'kr' ? '감도' : 'Sensitivity'}</p>
                 {sensEditing ? (
                   <input
-                    autoFocus
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    max="10"
+                    autoFocus type="number" step="0.01" min="0.01" max="10"
                     value={sensInput}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => setSensInput(e.target.value)}
@@ -453,46 +447,58 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                       if (e.key === 'Enter') e.currentTarget.blur()
                       if (e.key === 'Escape') setSensEditing(false)
                     }}
-                    className="w-16 px-2 py-1 rounded bg-black/20 border border-[#22D3EE] text-[#22D3EE] text-sm font-bold text-right outline-none"
+                    className="w-14 px-1.5 py-0.5 rounded border border-[#22D3EE] text-[#22D3EE] text-sm font-bold text-right outline-none"
+                    style={{ background: theme === 'light' ? '#fff' : '#0A0F1E' }}
                   />
                 ) : (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setSensInput(String(localSens)); setSensEditing(true) }}
-                    className="text-[#22D3EE] font-bold text-sm hover:underline"
-                  >
-                    {localSens.toFixed(2)}
-                  </button>
+                    className="text-[#22D3EE] font-bold text-sm tabular-nums hover:opacity-75 transition-opacity"
+                  >{localSens.toFixed(2)}</button>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleSensChange(Math.max(0.01, Math.round((localSens - 0.05) * 1000) / 1000)) }}
-                  className="w-7 h-7 rounded-lg bg-[#22D3EE]/10 text-[#22D3EE] font-bold hover:bg-[#22D3EE]/20"
-                >-</button>
-                <input
-                  type="range"
-                  min="0.01"
-                  max="2"
-                  step="0.01"
-                  value={localSens}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => handleSensChange(Number(e.target.value))}
-                  className="flex-1 accent-[#22D3EE]"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleSensChange(Math.min(10, Math.round((localSens + 0.05) * 1000) / 1000)) }}
-                  className="w-7 h-7 rounded-lg bg-[#22D3EE]/10 text-[#22D3EE] font-bold hover:bg-[#22D3EE]/20"
+                <button type="button"
+                  onClick={(e) => { e.stopPropagation(); handleSensChange(Math.max(0.01, Math.round((localSens - 0.01) * 1000) / 1000)) }}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-sm font-bold shrink-0 transition-opacity hover:opacity-75"
+                  style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
+                >−</button>
+                <div className="relative flex-1 h-5 flex items-center">
+                  <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#CBD5E1' : '#1E293B' }} />
+                  <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${Math.min(100, (localSens / 2) * 100)}%` }} />
+                  <input type="range" min="0.01" max="2" step="0.01" value={localSens}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => handleSensChange(Number(e.target.value))}
+                    className="absolute w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="absolute w-3 h-3 rounded-full border-2 border-white bg-[#22D3EE] pointer-events-none shadow"
+                    style={{ left: `calc(${Math.min(100, (localSens / 2) * 100)}% - 6px)` }} />
+                </div>
+                <button type="button"
+                  onClick={(e) => { e.stopPropagation(); handleSensChange(Math.min(10, Math.round((localSens + 0.01) * 1000) / 1000)) }}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-sm font-bold shrink-0 transition-opacity hover:opacity-75"
+                  style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
                 >+</button>
               </div>
             </div>
 
-            <div className="mt-auto space-y-2 text-xs">
-              <div className="flex justify-between"><span className={sub}>eDPI</span><span className="font-bold">{eDPI}</span></div>
-              <div className="flex justify-between"><span className={sub}>cm/360</span><span className="font-bold">{cm360.toFixed(1)}</span></div>
-              <div className="flex justify-between"><span className={sub}>{lang === 'kr' ? '분류' : 'Level'}</span><span className="font-bold" style={{ color: sensLevelInfo.color }}>{sensLevelInfo.label}</span></div>
+            {/* 통계 */}
+            <div className="mt-auto pt-3 border-t" style={{ borderColor: theme === 'light' ? '#E2E8F0' : '#1E293B' }}>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className={sub}>eDPI</span>
+                  <span className="font-bold tabular-nums">{eDPI}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={sub}>cm / 360°</span>
+                  <span className="font-bold tabular-nums">{cm360.toFixed(1)} cm</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={sub}>{lang === 'kr' ? '수준' : 'Level'}</span>
+                  <span className="font-bold" style={{ color: sensLevelInfo.color }}>{sensLevelInfo.label}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -520,112 +526,39 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             </button>
           </div>
 
-          <div className={`p-6 rounded-3xl border shadow-2xl w-56 h-[384px] shrink-0 flex flex-col ${panelCls}`}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">{lang === 'kr' ? '커스텀 설정' : 'Custom Settings'}</p>
+          {/* 오른쪽 — 커스텀 설정 */}
+          <div className={`p-5 rounded-3xl border shadow-2xl w-56 shrink-0 flex flex-col gap-4 ${panelCls}`}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">{lang === 'kr' ? '커스텀 설정' : 'Custom'}</p>
 
-            <div className="flex-1 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-center items-center mb-1.5">
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>
-                    {lang === 'kr' ? '공 색상' : 'Ball Color'}
-                  </span>
-                </div>
+            {[
+              { label: lang === 'kr' ? '공 색상' : 'Ball Color', options: BALL_COLORS,      current: ballColor,  set: setBallColor,  colorMode: true },
+              { label: lang === 'kr' ? '공 크기' : 'Ball Size',  options: BALL_SIZE_OPTIONS, current: ballSize,   set: setBallSize,   colorMode: false },
+              { label: lang === 'kr' ? '공 속도' : 'Ball Speed', options: BALL_SPEED_OPTIONS,current: ballSpeed,  set: setBallSpeed,  colorMode: false },
+              { label: lang === 'kr' ? '공 체력' : 'Ball HP',    options: BALL_HP_OPTIONS,   current: ballHP,     set: setBallHP,     colorMode: false },
+            ].map(({ label, options, current, set, colorMode }) => (
+              <div key={label}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1.5 ${sub}`}>{label}</p>
                 <div className="grid grid-cols-3 gap-1.5">
-                  {BALL_COLORS.map((color) => (
-                    <button
-                      key={color.key}
-                      type="button"
-                      title={lang === 'kr' ? color.labelKr : color.labelEn}
-                      aria-label={lang === 'kr' ? color.labelKr : color.labelEn}
-                      onClick={(e) => { e.stopPropagation(); setBallColor(color.value) }}
-                      className="py-1.5 rounded-lg text-[10px] font-bold border transition-all text-center"
-                      style={{
-                        background: ballColor === color.value ? color.value : 'transparent',
-                        borderColor: ballColor === color.value ? color.value : (theme === 'light' ? '#BAE6FD' : '#334155'),
-                        color: ballColor === color.value ? '#ffffff' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
-                      }}
-                    >
-                      {lang === 'kr' ? color.labelKr : color.labelEn}
-                    </button>
-                  ))}
+                  {options.map((opt) => {
+                    const active = current === opt.value
+                    const bg = active ? (colorMode ? opt.value : '#22D3EE') : 'transparent'
+                    const bc = active ? (colorMode ? opt.value : '#22D3EE') : (theme === 'light' ? '#CBD5E1' : '#334155')
+                    const fc = active ? '#fff' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1')
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); set(opt.value) }}
+                        className="py-1.5 rounded-lg text-[10px] font-bold border transition-all"
+                        style={{ background: bg, borderColor: bc, color: fc }}
+                      >
+                        {lang === 'kr' ? opt.labelKr : opt.labelEn}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
-
-              <div>
-                <div className="flex justify-center items-center mb-1.5">
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>
-                    {lang === 'kr' ? '공 크기' : 'Ball Size'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {BALL_SIZE_OPTIONS.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setBallSize(option.value) }}
-                      className="py-1.5 rounded-lg text-[10px] font-bold border transition-all"
-                      style={{
-                        background: ballSize === option.value ? '#22D3EE' : 'transparent',
-                        borderColor: ballSize === option.value ? '#22D3EE' : (theme === 'light' ? '#BAE6FD' : '#334155'),
-                        color: ballSize === option.value ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
-                      }}
-                    >
-                      {lang === 'kr' ? option.labelKr : option.labelEn}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-center items-center mb-1.5">
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>
-                    {lang === 'kr' ? '공 속도' : 'Ball Speed'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {BALL_SPEED_OPTIONS.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setBallSpeed(option.value) }}
-                      className="py-1.5 rounded-lg text-[10px] font-bold border transition-all"
-                      style={{
-                        background: ballSpeed === option.value ? '#22D3EE' : 'transparent',
-                        borderColor: ballSpeed === option.value ? '#22D3EE' : (theme === 'light' ? '#BAE6FD' : '#334155'),
-                        color: ballSpeed === option.value ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
-                      }}
-                    >
-                      {lang === 'kr' ? option.labelKr : option.labelEn}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-center items-center mb-1.5">
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${sub}`}>
-                    {lang === 'kr' ? '공 체력' : 'Ball HP'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {BALL_HP_OPTIONS.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setBallHP(option.value) }}
-                      className="py-1.5 rounded-lg text-[10px] font-bold border transition-all"
-                      style={{
-                        background: ballHP === option.value ? '#22D3EE' : 'transparent',
-                        borderColor: ballHP === option.value ? '#22D3EE' : (theme === 'light' ? '#BAE6FD' : '#334155'),
-                        color: ballHP === option.value ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
-                      }}
-                    >
-                      {lang === 'kr' ? option.labelKr : option.labelEn}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}
