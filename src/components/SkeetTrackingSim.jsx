@@ -341,9 +341,6 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               체력이 깎입니다. <strong>체력이 0이 되면 타겟 파괴!</strong><br />
               30초 동안 최대한 많이 파괴하세요.
             </p>
-            <p className={`mb-6 text-xs ${theme === 'light' ? 'text-[#7A7E85]' : 'text-[#768079]'}`}>
-              띠띠띠 소리가 들리면 체력이 깎이는 중 · ESC로 해제
-            </p>
             <button
               type="button"
               onClick={(e) => {
