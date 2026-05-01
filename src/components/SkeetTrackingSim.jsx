@@ -360,7 +360,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       {started && !isPointerLocked && !completed && (
         <div className="absolute inset-0 z-[25] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
           <div className="animate-bounce">
-            <p className="text-white text-xl font-bold bg-[#ff4655] px-6 py-3 rounded-2xl shadow-2xl">
+            <p className="text-[#0A0F1E] text-xl font-bold bg-[#22D3EE] px-6 py-3 rounded-2xl shadow-2xl">
               클릭해서 계속하기
             </p>
           </div>
