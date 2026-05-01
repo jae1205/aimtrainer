@@ -272,6 +272,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [sensEditing, setSensEditing] = useState(false)
   const [sensInput, setSensInput] = useState('')
   const [difficulty, setDifficulty] = useState('normal')
+  const [localDpi, setLocalDpi] = useState(() => {
+    const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
+    return setup.dpi || 800
+  })
 
   const DIFFICULTIES = [
     { key: 'easy',   label: '쉬움',   speedMult: 0.7,  drainMult: 1.5, desc: '느린 공 · 긴 체력' },
@@ -280,10 +284,31 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   ]
   const currentDiff = DIFFICULTIES.find(d => d.key === difficulty)
 
+  const eDPI = Math.round(localDpi * localSens * 100) / 100
+  const cm360 = eDPI > 0 ? 13063 / eDPI : 0
+  const getSensLevel = (cm) => {
+    if (cm > 65) return { label: '초저감도', color: '#94A3B8' }
+    if (cm > 45) return { label: '저감도',   color: '#38BDF8' }
+    if (cm > 30) return { label: '중간',     color: '#4ADE80' }
+    if (cm > 20) return { label: '중고감도', color: '#FBBF24' }
+    if (cm > 15) return { label: '고감도',   color: '#F97316' }
+    return             { label: '초고감도', color: '#F43F5E' }
+  }
+  const sensLevelInfo = getSensLevel(cm360)
+
   const handleSensChange = (val) => {
     setLocalSens(val)
     const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
     setup.valorantSens = val
+    setup.eDPI = Math.round(setup.dpi * val * 100) / 100
+    localStorage.setItem('userSetup', JSON.stringify(setup))
+  }
+
+  const handleDpiChange = (dpi) => {
+    setLocalDpi(dpi)
+    const setup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
+    setup.dpi = dpi
+    setup.eDPI = Math.round(dpi * setup.valorantSens * 100) / 100
     localStorage.setItem('userSetup', JSON.stringify(setup))
   }
 
@@ -360,55 +385,71 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
         <div className="absolute inset-0 z-30 flex items-center justify-center gap-4 bg-black/60 backdrop-blur-sm px-6">
 
           {/* 왼쪽 — 감도 설정 */}
-          <div className={`p-6 rounded-3xl border shadow-2xl w-52 shrink-0 ${panelCls}`}>
+          <div className={`p-6 rounded-3xl border shadow-2xl w-56 shrink-0 ${panelCls}`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE] mb-4">감도 설정</p>
 
-            {/* 라벨 + -/수치/+ */}
-            <div className="flex items-center justify-between mb-4">
-              <span className={`text-xs font-semibold ${sub}`}>감도</span>
-              <div className="flex items-center gap-1">
+            {/* DPI 프리셋 */}
+            <p className={`text-[10px] font-semibold uppercase tracking-wide mb-2 ${sub}`}>DPI</p>
+            <div className="grid grid-cols-2 gap-1.5 mb-4">
+              {[400, 800, 1600, 3200].map((dpi) => (
                 <button
+                  key={dpi}
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); handleSensChange(parseFloat(Math.max(0, localSens - 0.01).toFixed(2))) }}
-                  className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
-                  style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
-                >−</button>
-                {sensEditing ? (
-                  <input
-                    autoFocus
-                    type="number" min="0" max="1.0" step="0.01"
-                    value={sensInput}
-                    onChange={(e) => setSensInput(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onBlur={(e) => {
-                      e.stopPropagation()
-                      const v = parseFloat(sensInput)
-                      if (!isNaN(v)) handleSensChange(parseFloat(Math.min(1.0, Math.max(0, v)).toFixed(2)))
-                      setSensEditing(false)
-                    }}
-                    onKeyDown={(e) => {
-                      e.stopPropagation()
-                      if (e.key === 'Enter') e.target.blur()
-                    }}
-                    className="w-14 text-center text-sm font-black bg-transparent border-b-2 border-[#22D3EE] outline-none text-[#22D3EE]"
-                  />
-                ) : (
-                  <span
-                    className="w-14 text-center text-sm font-black text-[#22D3EE] cursor-text border-b-2 border-transparent hover:border-[#22D3EE]/40 transition-colors"
-                    onClick={(e) => { e.stopPropagation(); setSensInput(localSens.toFixed(2)); setSensEditing(true) }}
-                  >{localSens.toFixed(2)}</span>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleSensChange(parseFloat(Math.min(1.0, localSens + 0.01).toFixed(2))) }}
-                  className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors"
-                  style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
-                >+</button>
-              </div>
+                  onClick={(e) => { e.stopPropagation(); handleDpiChange(dpi) }}
+                  className="py-1.5 rounded-lg text-xs font-bold transition-all"
+                  style={{
+                    background: localDpi === dpi ? '#22D3EE' : 'transparent',
+                    border: `1px solid ${localDpi === dpi ? '#22D3EE' : (theme === 'light' ? '#BAE6FD' : '#334155')}`,
+                    color: localDpi === dpi ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
+                  }}
+                >{dpi}</button>
+              ))}
+            </div>
+
+            {/* 감도 라벨 + -/수치/+ */}
+            <p className={`text-[10px] font-semibold uppercase tracking-wide mb-2 ${sub}`}>감도</p>
+            <div className="flex items-center gap-1 mb-3">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleSensChange(parseFloat(Math.max(0, localSens - 0.01).toFixed(2))) }}
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors shrink-0"
+                style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
+              >−</button>
+              {sensEditing ? (
+                <input
+                  autoFocus
+                  type="number" min="0" max="1.0" step="0.01"
+                  value={sensInput}
+                  onChange={(e) => setSensInput(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onBlur={(e) => {
+                    e.stopPropagation()
+                    const v = parseFloat(sensInput)
+                    if (!isNaN(v)) handleSensChange(parseFloat(Math.min(1.0, Math.max(0, v)).toFixed(2)))
+                    setSensEditing(false)
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation()
+                    if (e.key === 'Enter') e.target.blur()
+                  }}
+                  className="flex-1 text-center text-sm font-black bg-transparent border-b-2 border-[#22D3EE] outline-none text-[#22D3EE]"
+                />
+              ) : (
+                <span
+                  className="flex-1 text-center text-sm font-black text-[#22D3EE] cursor-text border-b-2 border-transparent hover:border-[#22D3EE]/40 transition-colors"
+                  onClick={(e) => { e.stopPropagation(); setSensInput(localSens.toFixed(2)); setSensEditing(true) }}
+                >{localSens.toFixed(2)}</span>
+              )}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleSensChange(parseFloat(Math.min(1.0, localSens + 0.01).toFixed(2))) }}
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold transition-colors shrink-0"
+                style={{ background: theme === 'light' ? '#E0F2FE' : '#1E293B', color: '#22D3EE' }}
+              >+</button>
             </div>
 
             {/* 슬라이더 */}
-            <div className="relative h-5 flex items-center mb-3">
+            <div className="relative h-5 flex items-center mb-1">
               <div className="absolute w-full h-1 rounded-full" style={{ background: theme === 'light' ? '#BAE6FD' : '#1E293B' }} />
               <div className="absolute h-1 rounded-full bg-[#22D3EE]" style={{ width: `${localSens * 100}%` }} />
               <input
@@ -422,9 +463,28 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                 style={{ left: `calc(${localSens * 100}% - 7px)` }}
               />
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between mb-4">
               <span className={`text-[10px] ${sub}`}>0.00</span>
               <span className={`text-[10px] ${sub}`}>1.00</span>
+            </div>
+
+            {/* 구분선 */}
+            <div className="mb-3" style={{ borderTop: `1px solid ${theme === 'light' ? '#DDD8D2' : '#2A3D4F'}` }} />
+
+            {/* 통계 */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className={`text-[10px] font-semibold ${sub}`}>eDPI</span>
+                <span className="text-xs font-bold text-[#22D3EE]">{eDPI.toFixed(0)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={`text-[10px] font-semibold ${sub}`}>cm/360</span>
+                <span className="text-xs font-bold text-[#22D3EE]">{cm360.toFixed(1)} cm</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={`text-[10px] font-semibold ${sub}`}>수준</span>
+                <span className="text-xs font-bold" style={{ color: sensLevelInfo.color }}>{sensLevelInfo.label}</span>
+              </div>
             </div>
           </div>
 
