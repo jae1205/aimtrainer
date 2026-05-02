@@ -97,17 +97,17 @@ function playBeep(damagePct) {
   } catch (_) {}
 }
 
-function PlayerController({ sensitivityMultiplier = 1 }) {
+function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
   const { camera } = useThree()
   const rotation = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
   const handleMouseMove = useCallback((e) => {
     if (!document.pointerLockElement) return
-    const s = 0.07 * Math.PI / 180 * sensitivityMultiplier
+    const s = 0.07 * Math.PI / 180 * sensitivityMultiplier * (dpi / 800)
     rotation.current.y -= e.movementX * s
     rotation.current.x -= e.movementY * s
     rotation.current.x = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, rotation.current.x))
     camera.rotation.copy(rotation.current)
-  }, [camera, sensitivityMultiplier])
+  }, [camera, sensitivityMultiplier, dpi])
   useEffect(() => {
     camera.rotation.order = 'YXZ'
     window.addEventListener('mousemove', handleMouseMove)
@@ -126,7 +126,7 @@ function hpColor(hp) {
   return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2).clone()
 }
 
-function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS, ballColor = '#ff4655', numBalls = 4, arcHeightCfg = ARC_HEIGHT_CFG.medium, statsRef }) {
+function Scene({ sensitivity, dpi = 800, active, onDestroy, theme, speedMult = 1, drainMult = 1, ballRadius = BALL_RADIUS, ballColor = '#ff4655', numBalls = 4, arcHeightCfg = ARC_HEIGHT_CFG.medium, statsRef }) {
   const barW = ballRadius * 2.25
   const barH = ballRadius * 0.45
   const barY = ballRadius + 0.2
@@ -248,7 +248,7 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
 
   return (
     <>
-      <PlayerController sensitivityMultiplier={sensitivity} />
+      <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
       <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
       <ambientLight intensity={theme === 'dark' ? 1.4 : 1.5} />
       <hemisphereLight args={theme === 'dark' ? ['#4a90d9', '#1a3a5c', 1.6] : ['#ffffff', '#bae6fd', 1.5]} />
@@ -693,6 +693,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
             <Scene
               sensitivity={localSens}
+              dpi={localDpi}
               active={countdown === 0 && !completed && isPointerLocked}
               onDestroy={() => setScore(s => s + 1)}
               theme={theme}
