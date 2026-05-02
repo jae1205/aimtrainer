@@ -65,6 +65,10 @@ export const translations = {
     currentStatus: '현재 현황',
     currentSensSettings: '현재 감도 설정',
     sensLabel: '감도',
+    hudTargets: '파괴한 타겟',
+    hudTargetUnit: '개',
+    hudTimeLeft: '남은 시간',
+    hudTimeUnit: '초',
 
     // Test1 sidebar
     t1Heading: '360° 회전 정밀도',
@@ -142,6 +146,10 @@ export const translations = {
     currentStatus: 'Status',
     currentSensSettings: 'Sensitivity',
     sensLabel: 'Sens',
+    hudTargets: 'Targets',
+    hudTargetUnit: '',
+    hudTimeLeft: 'Time Left',
+    hudTimeUnit: 's',
 
     // Test1 sidebar
     t1Heading: '360° Rotation Precision',
