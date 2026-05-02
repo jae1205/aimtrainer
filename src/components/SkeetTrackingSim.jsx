@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { playComplete } from '../utils/sounds'
+import { playComplete, getSoundVolume } from '../utils/sounds'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import Crosshair from './Crosshair'
 import GunViewModel from './GunViewModel'
@@ -31,9 +31,9 @@ const BALL_COLORS = [
   { key: 'blue', labelKr: '파랑', labelEn: 'Blue', value: '#3b82f6' },
 ]
 const BALL_SIZE_OPTIONS = [
-  { key: 'small', labelKr: '작게', labelEn: 'Small', value: 0.12 },
-  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.18 },
-  { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.22 },
+  { key: 'small', labelKr: '작게', labelEn: 'Small', value: 0.1 },
+  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.15 },
+  { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.2 },
 ]
 const BALL_SPEED_FIXED = 0.8
 const BALL_HP_FIXED    = 0.7
@@ -78,8 +78,11 @@ function bezierPos(arc, t) {
 
 let _audioCtx = null
 function playBeep(damagePct) {
+  const vol = getSoundVolume()
+  if (vol === 0) return
   try {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    if (_audioCtx.state === 'suspended') _audioCtx.resume()
     const ctx = _audioCtx
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
@@ -87,7 +90,7 @@ function playBeep(damagePct) {
     gain.connect(ctx.destination)
     osc.type = 'sine'
     osc.frequency.value = 700 + damagePct * 900
-    gain.gain.setValueAtTime(0.2, ctx.currentTime)
+    gain.gain.setValueAtTime(0.2 * vol, ctx.currentTime)
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06)
     osc.start(ctx.currentTime)
     osc.stop(ctx.currentTime + 0.06)
@@ -247,12 +250,12 @@ function Scene({ sensitivity, active, onDestroy, theme, speedMult = 1, drainMult
     <>
       <PlayerController sensitivityMultiplier={sensitivity} />
       <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
-      <ambientLight intensity={theme === 'dark' ? 1.4 : 2.5} />
-      <hemisphereLight args={theme === 'dark' ? ['#4a90d9', '#1a3a5c', 1.6] : ['#ffffff', '#bae6fd', 2.0]} />
-      <directionalLight position={[0, 8, -6]} intensity={theme === 'dark' ? 2.0 : 2.5} color={theme === 'dark' ? '#ffffff' : '#ffffff'} />
+      <ambientLight intensity={theme === 'dark' ? 1.4 : 1.5} />
+      <hemisphereLight args={theme === 'dark' ? ['#4a90d9', '#1a3a5c', 1.6] : ['#ffffff', '#bae6fd', 1.5]} />
+      <directionalLight position={[0, 8, -6]} intensity={theme === 'dark' ? 2.0 : 1.5} color={theme === 'dark' ? '#ffffff' : '#ffffff'} />
       <pointLight position={[-4, 4, -6]} intensity={theme === 'dark' ? 2.0 : 1.5} color={theme === 'dark' ? '#60c8ff' : '#7dd3fc'} distance={16} />
       <pointLight position={[ 4, 4, -6]} intensity={theme === 'dark' ? 2.0 : 1.5} color={theme === 'dark' ? '#60c8ff' : '#7dd3fc'} distance={16} />
-      <pointLight position={[ 0, 4, -10]} intensity={theme === 'dark' ? 1.5 : 1.2} color={theme === 'dark' ? '#4ab0e0' : '#93c5fd'} distance={14} />
+      <pointLight position={[ 0, 4, -10]} intensity={theme === 'dark' ? 1.5 : 1.0} color={theme === 'dark' ? '#4ab0e0' : '#93c5fd'} distance={14} />
 
       {/* ── Room ──────────────────────────────────────────────── */}
       {/* 뒷벽 */}
@@ -330,7 +333,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [localSens, setLocalSens] = useState(sensitivity)
   const [sensEditing, setSensEditing] = useState(false)
   const [sensInput, setSensInput] = useState('')
-  const [ballSize,  setBallSize]  = useState(0.18)
+  const [ballSize,  setBallSize]  = useState(0.15)
   const ballSpeed = BALL_SPEED_FIXED
   const ballHP    = BALL_HP_FIXED
   const [numBalls,   setNumBalls]   = useState(4)
@@ -452,20 +455,18 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               <p className={`text-sm mt-2 font-semibold ${sub}`}>{lang === 'kr' ? '점' : 'pts'}</p>
             </div>
 
-            {/* Metrics — 3 × 2 grid */}
-            <div className="grid grid-cols-3" style={{ borderBottom: `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` }}>
+            {/* Metrics — 2 × 2 grid */}
+            <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` }}>
               {[
                 { labelKr: '킬 수',           labelEn: 'Kill Count', value: String(finalStats.kills),                                    unit: 'kill' },
-                { labelKr: '초당 킬',          labelEn: 'KPS',        value: finalStats.kps.toFixed(2),                                   unit: '/s' },
                 { labelKr: '정확도',           labelEn: 'Accuracy',   value: finalStats.accuracy.toFixed(1),                             unit: '%' },
                 { labelKr: '데미지',           labelEn: 'Damage',     value: finalStats.damage.toFixed(1),                               unit: 'HP' },
-                { labelKr: '분당 킬',          labelEn: 'SPM',        value: String(finalStats.spm),                                      unit: '/min' },
                 { labelKr: '평균 처치 시간',   labelEn: 'Avg TTK',    value: finalStats.avgTtk > 0 ? finalStats.avgTtk.toFixed(2) : '—', unit: finalStats.avgTtk > 0 ? 's' : '' },
               ].map(({ labelKr, labelEn, value, unit }, idx) => {
                 const label = lang === 'kr' ? labelKr : labelEn
-                const col = idx % 3
-                const row = Math.floor(idx / 3)
-                const borderR = col < 2 ? `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` : 'none'
+                const col = idx % 2
+                const row = Math.floor(idx / 2)
+                const borderR = col < 1 ? `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` : 'none'
                 const borderT = row > 0 ? `1px solid ${theme === 'dark' ? '#1E293B' : '#E2E8F0'}` : 'none'
                 return (
                   <div key={label} className="flex flex-col items-center justify-center py-5 gap-1"
