@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-valo-bg: #0F1923;
+  --color-valo-surface: #162330;
+  --color-valo-card: #1B2E3D;
+  --color-valo-red: #FF4655;
+  --color-valo-red-dark: #BD3944;
+  --color-valo-text: #ECE8E1;
+  --color-valo-muted: #768079;
+  --color-valo-border: #2A3D4F;
+
+  --color-light-bg: #F5F0EA;
+  --color-light-surface: #FFFFFF;
+  --color-light-card: #FFFFFF;
+  --color-light-text: #1A1F2E;
+  --color-light-muted: #7A7E85;
+  --color-light-border: #DDD8D2;
+}
+
+:root {
+  font-family: 'Pretendard Variable', 'Pretendard', Inter, system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+@keyframes shrink-bar {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease-out both;
+}
+.animate-fade-up-d1 { animation-delay: 0.1s; }
+.animate-fade-up-d2 { animation-delay: 0.2s; }
+.animate-fade-up-d3 { animation-delay: 0.3s; }
+
+@keyframes guide-slide {
+  0%   { transform: translateX(-6px); opacity: 0.6; }
+  50%  { transform: translateX(6px);  opacity: 1; }
+  100% { transform: translateX(-6px); opacity: 0.6; }
+}
