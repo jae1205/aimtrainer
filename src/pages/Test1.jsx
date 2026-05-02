@@ -107,19 +107,19 @@ function Test1() {
 
           {/* 파괴한 타겟 */}
           <div className={boxCls}>
-            <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>파괴한 타겟</p>
+            <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>{t.hudTargets}</p>
             <div className="flex items-baseline gap-1">
               <span className={valCls}>{score}</span>
-              <span className={`text-xs ${sub}`}>개</span>
+              {t.hudTargetUnit && <span className={`text-xs ${sub}`}>{t.hudTargetUnit}</span>}
             </div>
           </div>
 
           {/* 남은 시간 */}
           <div className={boxCls}>
-            <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>남은 시간</p>
+            <p className={`text-[10px] uppercase tracking-wider font-semibold ${sub}`}>{t.hudTimeLeft}</p>
             <div className="flex items-baseline gap-1">
               <span className={valCls}>{timeLeft}</span>
-              <span className={`text-xs ${sub}`}>초</span>
+              <span className={`text-xs ${sub}`}>{t.hudTimeUnit}</span>
             </div>
           </div>
 
