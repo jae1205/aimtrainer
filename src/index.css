@@ -38,11 +38,6 @@ html {
   scrollbar-gutter: stable;
 }
 
-@keyframes shrink-bar {
-  from { width: 100%; }
-  to { width: 0%; }
-}
-
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -54,9 +49,3 @@ html {
 .animate-fade-up-d1 { animation-delay: 0.1s; }
 .animate-fade-up-d2 { animation-delay: 0.2s; }
 .animate-fade-up-d3 { animation-delay: 0.3s; }
-
-@keyframes guide-slide {
-  0%   { transform: translateX(-6px); opacity: 0.6; }
-  50%  { transform: translateX(6px);  opacity: 1; }
-  100% { transform: translateX(-6px); opacity: 0.6; }
-}

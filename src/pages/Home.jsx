@@ -257,33 +257,14 @@ function SetupModal({ theme, onClose, onConfirm }) {
   )
 }
 
-const DRILL_ICONS = [
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 11a8 8 0 0 1 12.5-6.5" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 4.5H21v4.5" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20 13a8 8 0 0 1-12.5 6.5" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 19.5H3V15" />
-  </svg>,
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-    <circle cx="12" cy="12" r="5" />
-    <circle cx="12" cy="12" r="2" />
-    <path strokeLinecap="round" d="M12 4v3M12 17v3M4 12h3M17 12h3" />
-  </svg>,
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-    <circle cx="12" cy="12" r="3" />
-    <path strokeLinecap="round" d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-    <path strokeLinecap="round" d="M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" />
-  </svg>,
-]
-
 const FEATURE_ICONS = [
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+  <svg key="analytics" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
   </svg>,
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+  <svg key="feedback" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
     <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
   </svg>,
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+  <svg key="free" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>,
 ]

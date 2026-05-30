@@ -14,9 +14,6 @@ const DURATION = 60
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
-const BAR_W = BALL_RADIUS * 2.25
-const BAR_H = BALL_RADIUS * 0.45
-const BAR_Y = BALL_RADIUS + 0.2
 const BORDER = 0.015
 
 const WALL_X   = 6
@@ -94,7 +91,7 @@ function playBeep(damagePct) {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06)
     osc.start(ctx.currentTime)
     osc.stop(ctx.currentTime + 0.06)
-  } catch (_) {}
+  } catch {}
 }
 
 function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
@@ -428,9 +425,11 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       (avgTtk > 0 ? (3 / avgTtk) * 100 : 0) +
       damage * 80
     )
-    setFinalStats({ kills, kps, accuracy, damage, spm, avgTtk, totalScore })
+    const stats = { kills, kps, accuracy, damage, spm, avgTtk, totalScore }
+    setFinalStats(stats)
+    onComplete?.(stats)
     setCompleted(true)
-  }, [started, countdown, timeLeft, score])
+  }, [started, countdown, timeLeft, score, onComplete])
 
   return (
     <div

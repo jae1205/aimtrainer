@@ -1,100 +1,95 @@
 # AimForge
 
-> FPS 플레이어를 위한 에임 트레이닝 시뮬레이터
+FPS 플레이어를 위한 브라우저 기반 에임 트레이닝 앱입니다. 현재 앱은 스키트 트래킹 훈련에 집중하며, DPI와 인게임 감도를 기준으로 eDPI와 cm/360을 계산해 훈련 감도를 일관되게 맞춥니다.
 
-3D 환경에서 다양한 훈련 드릴을 통해 에임 능력을 측정하고, 현재 감도 기준 조정 방향을 제안합니다.
+## 현재 기능
 
----
+- 스키트 트래킹: 호를 그리며 움직이는 타겟을 크로스헤어로 추적해 체력을 깎는 60초 훈련
+- 감도 설정: DPI, 인게임 감도, eDPI, cm/360, 감도 수준 표시
+- 커스텀 훈련 옵션: 공 색상, 크기, 개수, 궤적 높이 조정
+- 결과 측정: 처치 수, 정확도, 누적 대미지, 평균 TTK, 총점
+- 설정 패널: 한국어/영어, 라이트/다크/시스템 테마, 조준선, 효과음 볼륨
+- Vercel 배포: `main` 브랜치 push 시 프로덕션 배포
 
-## Overview
+## 기술 스택
 
-일반적인 에임 트레이너와 달리 **실제 FPS 교전 패턴** (트래킹, 플릭킹, 탭샷)에 특화된 시나리오로 구성되어 있습니다.
-수집된 측정값은 고정 기준이 아닌 **입력한 현재 eDPI를 기준으로 상대적 조정값**을 계산하는 데 사용됩니다.
+- React 18
+- React Router
+- Three.js
+- @react-three/fiber
+- @react-three/drei
+- Tailwind CSS v4
+- Vite
+- Vercel Analytics
 
----
+## 프로젝트 구조
 
-## Features
-
-| 기능 | 설명 |
-|---|---|
-| 감도 설정 모달 | DPI 프리셋 + 인게임 감도 입력, eDPI · cm/360° 실시간 미리보기, 7단계 감도 수준 분류 |
-| 훈련 목록 | 드릴 카드 목록에서 원하는 훈련을 선택해 바로 시작 |
-| Test 1 · 스키트 트래킹 | 좌우 벽에서 호를 그리며 날아오는 타겟을 크로스헤어로 추적 — HP 드레인 방식으로 정확도 측정 |
-| 테마 | 라이트 / 다크 / 시스템 연동 |
-| 다국어 | 한국어 / English 전환 지원 |
-
----
-
-## Tech Stack
-
-- **Frontend** — React 18, React Router v7
-- **3D** — Three.js, @react-three/fiber, @react-three/drei
-- **Styling** — Tailwind CSS v4
-- **Build** — Vite 6
-
----
-
-## Project Structure
-
-```
+```text
 src/
-├── App.jsx                     # 라우팅 (/, /drills, /test1~3, /result)
-├── index.css                   # Tailwind + 디자인 토큰
-├── contexts/
-│   └── LanguageContext.jsx     # 다국어 컨텍스트 (ko / en)
-├── utils/
-│   ├── i18n.js                 # 한국어·영어 번역 텍스트
-│   └── sounds.js               # Web Audio API 효과음
-├── pages/
-│   ├── Home.jsx                # 랜딩 + 감도 설정 모달
-│   ├── DrillList.jsx           # 훈련 목록 페이지
-│   └── Test1.jsx               # 스키트 트래킹 테스트
-└── components/
-    ├── Layout.jsx              # 공통 헤더 / 테마 토글
-    ├── SkeetTrackingSim.jsx    # 스키트 트래킹 시뮬레이션
-    ├── RotationSim.jsx         # 360° 회전 시뮬레이션
-    ├── GunViewModel.jsx        # 1인칭 건 뷰모델
-    └── Crosshair.jsx           # 크로스헤어 오버레이
+  App.jsx                         # 라우팅: /, /drills, /test1
+  main.jsx                        # React entrypoint + Vercel Analytics
+  index.css                       # Tailwind import + global styles
+  components/
+    Crosshair.jsx                 # 조준선 렌더링과 프리셋
+    GunViewModel.jsx              # 1인칭 총 모델
+    Layout.jsx                    # 공통 헤더, 푸터, 설정 패널
+    SkeetTrackingSim.jsx          # 스키트 트래킹 3D 시뮬레이션
+  contexts/
+    LanguageContext.jsx           # 언어 상태와 번역 공급
+  pages/
+    DrillList.jsx                 # 훈련 목록
+    Home.jsx                      # 홈 화면과 초기 감도 설정
+    Test1.jsx                     # 스키트 트래킹 페이지와 HUD
+  utils/
+    i18n.js                       # 화면 번역 문자열
+    sounds.js                     # Web Audio 효과음
+public/
+  Fps Rig.glb                     # 총 모델
+  aimforge.svg                    # favicon
 ```
 
----
-
-## eDPI Sensitivity Tiers
-
-| eDPI | 수준 |
-|---|---|
-| ~ 99 | 초저감도 |
-| 100 ~ 183 | 저감도 |
-| 184 ~ 267 | 중저감도 |
-| 268 ~ 351 | 중감도 |
-| 352 ~ 435 | 중고감도 |
-| 436 ~ 519 | 고감도 |
-| 520 ~ | 초고감도 |
-
----
-
-## Getting Started
+## 로컬 실행
 
 ```bash
 npm install
 npm run dev
 ```
 
+프로덕션 빌드는 Vercel과 같은 명령을 사용합니다.
+
 ```bash
-# 프로덕션 빌드
 npm run build
 npm run preview
 ```
 
----
+코드 점검은 다음 명령으로 합니다.
 
-## Data Persistence
-
-테스트 설정값과 결과는 `localStorage`에 저장됩니다. 재시작 시 전체 초기화됩니다.
-
+```bash
+npm run lint
 ```
-localStorage keys:
-  userSetup     — { dpi, valorantSens, eDPI }
-  userSensitivity
-  test1Data / test2Data / test3Data
+
+## 배포
+
+Vercel 설정은 `vercel.json`에 명시되어 있습니다.
+
+- Framework: Vite
+- Build command: `npm run build`
+- Output directory: `dist`
+- Production branch: `main`
+- SPA rewrite: 모든 경로를 `/index.html`로 rewrite
+
+일반 작업 흐름은 `dev`에서 작업한 뒤 `main`으로 반영하는 방식입니다.
+
+## 로컬 저장 데이터
+
+브라우저 `localStorage`에 다음 값이 저장됩니다.
+
+```text
+lang
+themeMode
+crosshairType
+soundVolume
+userSetup        # { dpi, valorantSens, eDPI }
+userSensitivity
+test1Data
 ```

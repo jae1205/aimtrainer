@@ -56,7 +56,7 @@ export function playHit() {
     gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
     osc2.start(now)
     osc2.stop(now + 0.04)
-  } catch (_) {}
+  } catch {}
 }
 
 /**
@@ -79,7 +79,7 @@ export function playMiss() {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14)
     osc.start(now)
     osc.stop(now + 0.14)
-  } catch (_) {}
+  } catch {}
 }
 
 /**
@@ -102,7 +102,7 @@ export function playConfirm() {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1)
     osc.start(now)
     osc.stop(now + 0.1)
-  } catch (_) {}
+  } catch {}
 }
 
 /**
@@ -128,5 +128,5 @@ export function playComplete() {
       osc.start(now + delay)
       osc.stop(now + delay + 0.12)
     })
-  } catch (_) {}
+  } catch {}
 }

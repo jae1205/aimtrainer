@@ -1,11 +1,9 @@
-import { useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import Layout from '../components/Layout'
 import SkeetTrackingSim from '../components/SkeetTrackingSim'
 import { useLanguage } from '../contexts/LanguageContext'
 
 function Test1() {
-  const navigate = useNavigate()
   const [themeMode, setThemeMode] = useState(() => {
     return localStorage.getItem('themeMode') || 'system'
   })
@@ -66,10 +64,9 @@ function Test1() {
     return () => cancelAnimationFrame(rafRef.current)
   }, [])
 
-  const handleComplete = (data) => {
+  const handleComplete = useCallback((data) => {
     localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier }))
-    navigate('/drills')
-  }
+  }, [sensitivityMultiplier])
 
   const { t } = useLanguage()
   const sub = theme === 'light' ? 'text-slate-500' : 'text-slate-400'

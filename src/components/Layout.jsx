@@ -69,25 +69,6 @@ function Layout({ children, isTestPage = false }) {
     window.dispatchEvent(new CustomEvent('crosshair-change', { detail: crosshair }))
   }, [crosshair])
 
-  /* ── Program dropdown ───────────────────────────────────────── */
-  const [programOpen, setProgramOpen] = useState(false)
-  const programRef = useRef(null)
-
-  const DRILL_LIST = [
-    { label: '360° 회전 제어', path: '/test1' },
-    { label: '플리킹', path: '/test2' },
-    { label: '탭샷', path: '/test3' },
-  ]
-
-  useEffect(() => {
-    if (!programOpen) return
-    const handler = (e) => {
-      if (programRef.current && !programRef.current.contains(e.target)) setProgramOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [programOpen])
-
   /* ── Settings panel ──────────────────────────────────────────── */
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef(null)
