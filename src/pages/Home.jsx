@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useLanguage } from '../contexts/LanguageContext'
 
-function AimButton({ onClick, children, type = 'button', className = '' }) {
+function AimButton({ onClick, href, children, type = 'button', className = '' }) {
   const [hovered, setHovered] = useState(false)
+  const Component = href ? 'a' : 'button'
+
   return (
-    <button
-      type={type}
+    <Component
+      {...(href ? { href } : { type })}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -60,7 +62,7 @@ function AimButton({ onClick, children, type = 'button', className = '' }) {
           }} />
         </span>
       </span>
-    </button>
+    </Component>
   )
 }
 
@@ -348,7 +350,7 @@ function Home() {
 
             {/* CTA */}
             <div className="flex flex-col items-center gap-3">
-              <AimButton onClick={() => navigate('/drills')}>
+              <AimButton href="/drills">
                 {t.startTestBtn}
               </AimButton>
             </div>
@@ -435,7 +437,7 @@ function Home() {
                 {t.ctaDesc}
               </p>
               <div className="flex justify-center">
-                <AimButton onClick={() => navigate('/drills')}>
+                <AimButton href="/drills">
                   {t.ctaBtn}
                 </AimButton>
               </div>
