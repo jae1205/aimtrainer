@@ -3,9 +3,10 @@ import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { LanguageProvider } from './contexts/LanguageContext'
 import Home from './pages/Home'
 import DrillList from './pages/DrillList'
+import { preloadTest1 } from './routes/preloaders'
 import { scheduleAdsenseLoad } from './utils/adsense'
 
-const Test1 = lazy(() => import('./pages/Test1'))
+const Test1 = lazy(preloadTest1)
 
 function RouteFallback() {
   return (

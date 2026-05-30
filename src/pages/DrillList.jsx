@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useLanguage } from '../contexts/LanguageContext'
+import { preloadSkeetTracking, preloadTest1 } from '../routes/preloaders'
 
 const DRILLS = [
   {
@@ -93,6 +94,20 @@ function DrillList() {
     return () => window.removeEventListener('theme-change', handler)
   }, [])
 
+  useEffect(() => {
+    preloadTest1()
+
+    const preload = () => preloadSkeetTracking()
+
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(preload, { timeout: 2500 })
+      return () => window.cancelIdleCallback?.(id)
+    }
+
+    const id = window.setTimeout(preload, 1200)
+    return () => window.clearTimeout(id)
+  }, [])
+
   const C = {
     bg: dark ? '#0A0F1E' : '#F0F9FF',
     text: dark ? '#F1F5F9' : '#0F172A',
@@ -117,7 +132,12 @@ function DrillList() {
 
           <div className="flex flex-col gap-3">
             {DRILLS.map((drill) => (
-              <DrillCard key={drill.id} drill={drill} dark={dark} lang={lang} />
+              <DrillCard
+                key={drill.id}
+                drill={drill}
+                dark={dark}
+                lang={lang}
+              />
             ))}
           </div>
         </div>

@@ -1,7 +1,28 @@
-import { useCallback, useState, useEffect, useRef } from 'react'
+import { lazy, Suspense, useCallback, useState, useEffect, useRef } from 'react'
 import Layout from '../components/Layout'
-import SkeetTrackingSim from '../components/SkeetTrackingSim'
 import { useLanguage } from '../contexts/LanguageContext'
+import { preloadSkeetTracking } from '../routes/preloaders'
+
+const SkeetTrackingSim = lazy(preloadSkeetTracking)
+
+function TrainingLoading({ theme }) {
+  return (
+    <div className={`absolute inset-0 flex items-center justify-center ${
+      theme === 'light' ? 'bg-[#F5F0EA]' : 'bg-[#0F1923]'
+    }`}>
+      <div className={`rounded-3xl border px-8 py-6 text-center shadow-2xl ${
+        theme === 'light'
+          ? 'bg-white/95 border-[#DDD8D2] text-[#1A1F2E]'
+          : 'bg-[#1B2E3D] border-[#2A3D4F] text-[#ECE8E1]'
+      }`}>
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#22D3EE]">
+          Skeet Tracking
+        </p>
+        <p className="mt-2 text-sm font-bold">훈련 화면 준비 중...</p>
+      </div>
+    </div>
+  )
+}
 
 function Test1() {
   const [themeMode, setThemeMode] = useState(() => {
@@ -48,6 +69,11 @@ function Test1() {
   const [fps, setFps] = useState(0)
   const rafRef = useRef(null)
   useEffect(() => {
+    if (!simActive) {
+      setFps(0)
+      return undefined
+    }
+
     let frameCount = 0
     let lastTime = performance.now()
     const loop = () => {
@@ -62,7 +88,7 @@ function Test1() {
     }
     rafRef.current = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [])
+  }, [simActive])
 
   const handleComplete = useCallback((data) => {
     localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier }))
@@ -82,12 +108,14 @@ function Test1() {
           theme === 'light' ? 'bg-[#F5F0EA]' : 'bg-[#0F1923]'
         } w-full flex-1 flex items-center justify-center`}
       >
-        <SkeetTrackingSim
-          onComplete={handleComplete}
-          sensitivity={sensitivityMultiplier}
-          theme={theme}
-          onStatsChange={({ score: s, timeLeft: t }) => { setScore(s); setTimeLeft(t) }}
-        />
+        <Suspense fallback={<TrainingLoading theme={theme} />}>
+          <SkeetTrackingSim
+            onComplete={handleComplete}
+            sensitivity={sensitivityMultiplier}
+            theme={theme}
+            onStatsChange={({ score: s, timeLeft: t }) => { setScore(s); setTimeLeft(t) }}
+          />
+        </Suspense>
 
         {/* HUD — 헤더 바로 아래 가운데 */}
         <div className={`absolute top-20 left-1/2 -translate-x-1/2 z-[39] pointer-events-none transition-all duration-300 flex gap-3 ${

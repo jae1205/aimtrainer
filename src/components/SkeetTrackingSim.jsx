@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
+import { lazy, useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { playComplete, getSoundVolume } from '../utils/sounds'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import Crosshair from './Crosshair'
-import GunViewModel from './GunViewModel'
 import { PerspectiveCamera } from '@react-three/drei'
 import { useLanguage } from '../contexts/LanguageContext'
 import * as THREE from 'three'
+
+const GunViewModel = lazy(() => import('./GunViewModel'))
 
 const CAMERA_CONFIG = { position: [0, 0, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
@@ -678,16 +679,16 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
 
       <Crosshair visible={started && countdown === 0 && isPointerLocked && !completed} />
 
-      <Canvas
-        dpr={[1, 2]}
-        gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
-        camera={CAMERA_CONFIG}
-      >
-        <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
-        <Suspense fallback={null}>
-          <GunViewModel active={started && isPointerLocked && countdown === 0 && !completed} shootTrigger={0} />
-        </Suspense>
-        {started && (
+      {started && !completed && (
+        <Canvas
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
+          camera={CAMERA_CONFIG}
+        >
+          <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
+          <Suspense fallback={null}>
+            <GunViewModel active={isPointerLocked && countdown === 0} shootTrigger={0} />
+          </Suspense>
           <>
             <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
             <Scene
@@ -705,8 +706,8 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               statsRef={statsRef}
             />
           </>
-        )}
-      </Canvas>
+        </Canvas>
+      )}
     </div>
   )
 }
