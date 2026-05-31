@@ -14,7 +14,7 @@ const _offset = new THREE.Vector3()
 const _localEuler = new THREE.Euler(0, 0, 0, 'YXZ')
 const _localQuat = new THREE.Quaternion()
 
-export default function GunViewModel({ active = true, shootTrigger = 0 }) {
+export default function GunViewModel({ active = true, shootTrigger = 0, onReady }) {
   const groupRef = useRef(null)
   const finishListenerRef = useRef(null)
 
@@ -29,7 +29,8 @@ export default function GunViewModel({ active = true, shootTrigger = 0 }) {
     scene.traverse((obj) => {
       if (obj.isMesh) obj.frustumCulled = false
     })
-  }, [scene])
+    onReady?.()
+  }, [scene, onReady])
 
   // Play Idle animation on mount
   useEffect(() => {

@@ -7,7 +7,8 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { useLanguage } from '../contexts/LanguageContext'
 import * as THREE from 'three'
 
-const GunViewModel = lazy(() => import('./GunViewModel'))
+const preloadGunViewModel = () => import('./GunViewModel')
+const GunViewModel = lazy(preloadGunViewModel)
 
 const CAMERA_CONFIG = { position: [0, 0, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
@@ -16,6 +17,8 @@ const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
 const BORDER = 0.015
+const CANVAS_MOUNT_DELAY = 300
+const PREPARE_FALLBACK_DELAY = 5000
 
 const WALL_X   = 6
 const FLOOR_Y  = -2.0
@@ -323,6 +326,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [countdown, setCountdown] = useState(0)
   const [isPointerLocked, setIsPointerLocked] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [isPreparing, setIsPreparing] = useState(false)
+  const [canvasEnabled, setCanvasEnabled] = useState(false)
+  const [canvasReady, setCanvasReady] = useState(false)
+  const [viewModelReady, setViewModelReady] = useState(false)
   const containerRef  = useRef(null)
   const finalScoreRef = useRef(0)
   const statsRef = useRef({ hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [] })
@@ -380,34 +387,98 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   useEffect(() => { onStatsChange?.({ score, timeLeft }) }, [score, timeLeft, onStatsChange])
 
   useEffect(() => {
+    const preload = () => {
+      preloadGunViewModel().catch(() => {})
+    }
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preload, { timeout: 1200 })
+      return () => window.cancelIdleCallback(idleId)
+    }
+
+    const timeoutId = window.setTimeout(preload, 600)
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
+  useEffect(() => {
     const h = () => setIsPointerLocked(!!document.pointerLockElement)
     document.addEventListener('pointerlockchange', h)
     return () => document.removeEventListener('pointerlockchange', h)
   }, [])
 
-  const requestLock = () => {
+  const requestLock = useCallback(() => {
     if (!containerRef.current || isPointerLocked) return
     const el = containerRef.current
-    const p  = el.requestPointerLock({ unadjustedMovement: true })
-    if (p?.catch) p.catch(() => el.requestPointerLock())
-  }
+    try {
+      const p  = el.requestPointerLock({ unadjustedMovement: true })
+      if (p?.catch) {
+        p.catch(() => {
+          try {
+            el.requestPointerLock()
+          } catch {}
+        })
+      }
+    } catch {
+      try {
+        el.requestPointerLock()
+      } catch {}
+    }
+  }, [isPointerLocked])
+
+  const handleCanvasReady = useCallback(() => {
+    setCanvasReady(true)
+  }, [])
+
+  const handleViewModelReady = useCallback(() => {
+    setViewModelReady(true)
+  }, [])
 
   useEffect(() => {
-    if (!started || countdown <= 0) return
+    if (!isPreparing || canvasEnabled) return undefined
+
+    const timeoutId = window.setTimeout(() => setCanvasEnabled(true), CANVAS_MOUNT_DELAY)
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [isPreparing, canvasEnabled])
+
+  useEffect(() => {
+    if (!isPreparing || !canvasReady || !viewModelReady) return undefined
+
+    const timeoutId = window.setTimeout(() => {
+      setIsPreparing(false)
+      setCountdown(3)
+      window.dispatchEvent(new CustomEvent('test-start'))
+    }, 150)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isPreparing, canvasReady, viewModelReady])
+
+  useEffect(() => {
+    if (!isPreparing || !canvasEnabled || (canvasReady && viewModelReady)) return undefined
+    const timeoutId = window.setTimeout(() => {
+      setCanvasReady(true)
+      setViewModelReady(true)
+    }, PREPARE_FALLBACK_DELAY)
+    return () => window.clearTimeout(timeoutId)
+  }, [isPreparing, canvasEnabled, canvasReady, viewModelReady])
+
+  useEffect(() => {
+    if (!started || isPreparing || countdown <= 0) return
     const t = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(t)
-  }, [started, countdown])
+  }, [started, isPreparing, countdown])
 
   useEffect(() => {
-    if (!started || countdown !== 0 || !isPointerLocked) return
+    if (!started || isPreparing || countdown !== 0 || !isPointerLocked) return
     const iv = setInterval(() => {
       setTimeLeft(p => { if (p <= 1) { clearInterval(iv); return 0 } return p - 1 })
     }, 1000)
     return () => clearInterval(iv)
-  }, [started, countdown, isPointerLocked])
+  }, [started, isPreparing, countdown, isPointerLocked])
 
   useEffect(() => {
-    if (!started || countdown !== 0 || timeLeft > 0) return
+    if (!started || isPreparing || countdown !== 0 || timeLeft > 0) return
     if (document.pointerLockElement) document.exitPointerLock()
     window.dispatchEvent(new CustomEvent('test-end'))
     finalScoreRef.current = score
@@ -430,7 +501,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
     setFinalStats(stats)
     onComplete?.(stats)
     setCompleted(true)
-  }, [started, countdown, timeLeft, score, onComplete])
+  }, [started, isPreparing, countdown, timeLeft, score, onComplete])
 
   return (
     <div
@@ -608,11 +679,15 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                 e.stopPropagation()
                 statsRef.current = { hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [] }
                 setFinalStats(null)
+                setCompleted(false)
                 setStarted(true)
-                setCountdown(3)
+                setCountdown(0)
                 setScore(0)
                 setTimeLeft(DURATION)
-                window.dispatchEvent(new CustomEvent('test-start'))
+                setIsPreparing(true)
+                setCanvasEnabled(false)
+                setCanvasReady(false)
+                setViewModelReady(false)
                 requestLock()
               }}
               className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0A0F1E] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
@@ -658,7 +733,32 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
         </div>
         </div>
       )}
-      {started && !isPointerLocked && !completed && (
+      {started && isPreparing && !completed && (
+        <div
+          className="absolute inset-0 z-[32] flex items-center justify-center bg-[#06111F]/92 backdrop-blur-md px-6"
+          role="status"
+          aria-live="polite"
+        >
+          <div className={`w-full max-w-sm rounded-3xl border px-7 py-6 text-center shadow-2xl ${panelCls}`}>
+            <div className="mx-auto mb-5 h-12 w-12 rounded-full border-4 border-[#22D3EE]/20 border-t-[#22D3EE] animate-spin" />
+            <p className="text-xs font-bold uppercase tracking-widest text-[#22D3EE] mb-2">
+              {lang === 'kr' ? '훈련 환경 준비 중' : 'Preparing Training'}
+            </p>
+            <p className={`text-sm font-semibold leading-relaxed ${sub}`}>
+              {lang === 'kr'
+                ? '3D 조준 환경과 모델을 불러오고 있습니다.'
+                : 'Loading the 3D aim scene and view model.'}
+            </p>
+            <div className="mt-5 flex justify-center gap-1.5">
+              <span className="h-1.5 w-8 rounded-full bg-[#22D3EE] animate-pulse" />
+              <span className="h-1.5 w-8 rounded-full bg-[#22D3EE]/60 animate-pulse [animation-delay:120ms]" />
+              <span className="h-1.5 w-8 rounded-full bg-[#22D3EE]/30 animate-pulse [animation-delay:240ms]" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {started && !isPreparing && !isPointerLocked && !completed && (
         <div className="absolute inset-0 z-[25] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
           <div className="animate-bounce">
             <p className="text-[#0A0F1E] text-xl font-bold bg-[#22D3EE] px-6 py-3 rounded-2xl shadow-2xl">
@@ -668,7 +768,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
         </div>
       )}
 
-      {started && countdown > 0 && (
+      {started && !isPreparing && countdown > 0 && (
         <div className="absolute inset-0 z-[26] flex items-center justify-center bg-black/60">
           <div className="text-white text-7xl font-black drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]">
             {countdown}
@@ -677,24 +777,29 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       )}
 
 
-      <Crosshair visible={started && countdown === 0 && isPointerLocked && !completed} />
+      <Crosshair visible={started && !isPreparing && countdown === 0 && isPointerLocked && !completed} />
 
-      {started && !completed && (
+      {started && !completed && canvasEnabled && (
         <Canvas
           dpr={[1, 1.5]}
           gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
           camera={CAMERA_CONFIG}
+          onCreated={handleCanvasReady}
         >
           <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
           <Suspense fallback={null}>
-            <GunViewModel active={isPointerLocked && countdown === 0} shootTrigger={0} />
+            <GunViewModel
+              active={!isPreparing && isPointerLocked && countdown === 0}
+              shootTrigger={0}
+              onReady={handleViewModelReady}
+            />
           </Suspense>
           <>
             <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
             <Scene
               sensitivity={localSens}
               dpi={localDpi}
-              active={countdown === 0 && !completed && isPointerLocked}
+              active={!isPreparing && countdown === 0 && !completed && isPointerLocked}
               onDestroy={() => setScore(s => s + 1)}
               theme={theme}
               speedMult={ballSpeed}
