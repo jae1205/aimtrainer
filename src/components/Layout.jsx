@@ -27,7 +27,6 @@ function Layout({ children, isTestPage = false }) {
   }
   const theme = resolveTheme(themeMode)
   const dark = theme === 'dark'
-  const chromeDark = isTestPage || dark
 
   /* ── Test fullscreen ─────────────────────────────────────────── */
   const [testActive, setTestActive] = useState(false)
@@ -89,7 +88,7 @@ function Layout({ children, isTestPage = false }) {
   }, [settingsOpen])
 
   /* ── Color tokens ────────────────────────────────────────────── */
-  const C = chromeDark ? {
+  const C = dark ? {
     bg:        '#080B10',
     card:      '#111820',
     border:    '#27313A',
@@ -174,7 +173,7 @@ function Layout({ children, isTestPage = false }) {
               to="/drills"
               className="inline-flex h-7 items-center justify-center rounded-md px-3 text-xs font-medium leading-none transition-all duration-150"
               style={{ color: C.muted }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = chromeDark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
               onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
             >
               {lang === 'kr' ? '훈련 목록' : 'Drills'}
@@ -189,7 +188,7 @@ function Layout({ children, isTestPage = false }) {
               className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
               style={{
                 color: settingsOpen ? '#22D3EE' : C.muted,
-                background: settingsOpen ? (chromeDark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)') : 'transparent',
+                background: settingsOpen ? (dark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)') : 'transparent',
               }}
               onMouseEnter={e => { if (!settingsOpen) { e.currentTarget.style.color = C.hoverText; e.currentTarget.style.background = C.hover } }}
               onMouseLeave={e => { if (!settingsOpen) { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' } }}
@@ -241,7 +240,7 @@ function Layout({ children, isTestPage = false }) {
                     title={opt.label}
                     className="flex-1 aspect-square rounded-xl flex items-center justify-center border transition-all"
                     style={{
-                      background: crosshair === opt.key ? (chromeDark ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.1)') : 'transparent',
+                      background: crosshair === opt.key ? (dark ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.1)') : 'transparent',
                       borderColor: crosshair === opt.key ? '#22D3EE' : C.border,
                       padding: '6px',
                     }}
