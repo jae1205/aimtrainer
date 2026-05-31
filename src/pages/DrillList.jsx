@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useLanguage } from '../contexts/LanguageContext'
-import { preloadSkeetTracking, preloadTest1 } from '../routes/preloaders'
+import { preloadTest1 } from '../routes/preloaders'
 
 const DRILLS = [
   {
@@ -23,7 +23,6 @@ const DRILLS = [
 ]
 
 function DrillCard({ drill, dark, lang }) {
-  const navigate = useNavigate()
   const [hovered, setHovered] = useState(false)
 
   const C = {
@@ -36,12 +35,11 @@ function DrillCard({ drill, dark, lang }) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate(drill.path)}
+    <Link
+      to={drill.path}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="w-full text-left rounded-2xl border p-6 transition-all duration-200"
+      className="block w-full text-left rounded-2xl border p-6 transition-all duration-200"
       style={{
         background: C.card,
         borderColor: hovered ? C.borderHover : C.border,
@@ -74,7 +72,7 @@ function DrillCard({ drill, dark, lang }) {
           <polyline points="9 18 15 12 9 6" />
         </svg>
       </div>
-    </button>
+    </Link>
   )
 }
 
@@ -96,16 +94,6 @@ function DrillList() {
 
   useEffect(() => {
     preloadTest1()
-
-    const preload = () => preloadSkeetTracking()
-
-    if ('requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(preload, { timeout: 2500 })
-      return () => window.cancelIdleCallback?.(id)
-    }
-
-    const id = window.setTimeout(preload, 1200)
-    return () => window.clearTimeout(id)
   }, [])
 
   const C = {

@@ -8,6 +8,7 @@ export function scheduleAdsenseLoad() {
   scheduled = true
 
   const loadScript = () => {
+    if (window.location.pathname !== '/') return
     if (document.querySelector(`script[src="${ADSENSE_SRC}"]`)) return
 
     const script = document.createElement('script')
@@ -26,5 +27,5 @@ export function scheduleAdsenseLoad() {
     window.setTimeout(loadScript, 1)
   }
 
-  window.setTimeout(loadWhenIdle, 8000)
+  window.setTimeout(loadWhenIdle, 15000)
 }

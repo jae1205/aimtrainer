@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { setSoundVolume, getSoundVolume } from '../utils/sounds'
 import { CROSSHAIR_OPTIONS } from './Crosshair'
 import { useLanguage } from '../contexts/LanguageContext'
 
 function Layout({ children, isTestPage = false }) {
-  const navigate = useNavigate()
   const { lang, t, setLang } = useLanguage()
 
   /* ── Theme ───────────────────────────────────────────────────── */
@@ -163,23 +162,22 @@ function Layout({ children, isTestPage = false }) {
 
           {/* Logo + Program buttons */}
           <div className="flex items-center gap-4">
-            <button type="button" onClick={() => navigate('/')} className="flex items-center gap-1">
+            <Link to="/" aria-label="AimForge home" className="flex items-center gap-1">
               <span className="text-lg font-black tracking-tight">
                 <span className="text-[#22D3EE]">Aim</span>
                 <span style={{ color: C.text }}>Forge</span>
               </span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => navigate('/drills')}
+            <Link
+              to="/drills"
               className="px-3 h-7 rounded-md text-xs font-medium transition-all duration-150"
               style={{ color: C.muted }}
               onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
               onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
             >
               {lang === 'kr' ? '훈련목록' : 'Drills'}
-            </button>
+            </Link>
           </div>
 
           {/* Settings button */}
