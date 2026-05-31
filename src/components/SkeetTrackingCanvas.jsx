@@ -17,8 +17,51 @@ const WALL_X = 6
 const FLOOR_Y = -2.0
 const CEIL_Y = 4.5
 const BACK_Z = -12
-const BG_DARK = '#060D18'
-const BG_LIGHT = '#f0f9ff'
+
+const ROOM_THEME = {
+  dark: {
+    background: '#070A0F',
+    fog: '#070A0F',
+    backWall: '#151C24',
+    sideWall: '#111820',
+    floor: '#0D1218',
+    ceiling: '#171F28',
+    trim: '#26313D',
+    accent: '#22D3EE',
+    warmAccent: '#F59E0B',
+    ambient: 0.52,
+    hemiSky: '#7DD3FC',
+    hemiGround: '#0B1118',
+    hemiIntensity: 0.72,
+    keyLight: '#EAF6FF',
+    keyIntensity: 0.86,
+    fillLight: '#22D3EE',
+    fillIntensity: 0.88,
+    rimLight: '#F59E0B',
+    rimIntensity: 0.55,
+  },
+  light: {
+    background: '#0E141A',
+    fog: '#0E141A',
+    backWall: '#303C47',
+    sideWall: '#26313B',
+    floor: '#202932',
+    ceiling: '#38434D',
+    trim: '#52606C',
+    accent: '#22D3EE',
+    warmAccent: '#F59E0B',
+    ambient: 0.64,
+    hemiSky: '#A7DFF0',
+    hemiGround: '#0D141B',
+    hemiIntensity: 0.76,
+    keyLight: '#F4FAFF',
+    keyIntensity: 0.88,
+    fillLight: '#22D3EE',
+    fillIntensity: 0.72,
+    rimLight: '#F59E0B',
+    rimIntensity: 0.34,
+  },
+}
 
 function makeArc(dir, arcCfg) {
   const d = dir ?? (Math.random() > 0.5 ? 1 : -1)
@@ -114,6 +157,7 @@ function Scene({
   arcHeightCfg,
   statsRef,
 }) {
+  const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
   const barW = ballRadius * 2.25
   const barH = ballRadius * 0.45
   const barY = ballRadius + 0.2
@@ -227,33 +271,59 @@ function Scene({
   return (
     <>
       <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
-      <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
-      <ambientLight intensity={theme === 'dark' ? 1.4 : 1.5} />
-      <hemisphereLight args={theme === 'dark' ? ['#4a90d9', '#1a3a5c', 1.6] : ['#ffffff', '#bae6fd', 1.5]} />
-      <directionalLight position={[0, 8, -6]} intensity={theme === 'dark' ? 2.0 : 1.5} color="#ffffff" />
-      <pointLight position={[-4, 4, -6]} intensity={theme === 'dark' ? 2.0 : 1.5} color={theme === 'dark' ? '#60c8ff' : '#7dd3fc'} distance={16} />
-      <pointLight position={[4, 4, -6]} intensity={theme === 'dark' ? 2.0 : 1.5} color={theme === 'dark' ? '#60c8ff' : '#7dd3fc'} distance={16} />
-      <pointLight position={[0, 4, -10]} intensity={theme === 'dark' ? 1.5 : 1.0} color={theme === 'dark' ? '#4ab0e0' : '#93c5fd'} distance={14} />
+      <color attach="background" args={[room.background]} />
+      <fog attach="fog" args={[room.fog, 10, 22]} />
+      <ambientLight intensity={room.ambient} />
+      <hemisphereLight args={[room.hemiSky, room.hemiGround, room.hemiIntensity]} />
+      <directionalLight position={[-3.5, 5.4, -4.5]} intensity={room.keyIntensity} color={room.keyLight} />
+      <spotLight position={[0, 4.2, -3.2]} angle={0.58} penumbra={0.8} intensity={room.fillIntensity} color={room.fillLight} distance={15} />
+      <pointLight position={[-4.8, 2.7, -9]} intensity={room.rimIntensity} color={room.rimLight} distance={10} />
+      <pointLight position={[4.8, 2.7, -9]} intensity={room.fillIntensity * 0.45} color={room.fillLight} distance={10} />
 
       <mesh position={[0, 1.5, BACK_Z]}>
         <planeGeometry args={[WALL_X * 2, CEIL_Y - FLOOR_Y]} />
-        <meshStandardMaterial color={theme === 'dark' ? '#1a3a5c' : '#bae6fd'} roughness={0.9} />
+        <meshStandardMaterial color={room.backWall} roughness={0.88} metalness={0.04} />
       </mesh>
       <mesh position={[-WALL_X, 1.5, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
-        <meshStandardMaterial color={theme === 'dark' ? '#1e4060' : '#e0f2fe'} roughness={0.9} />
+        <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />
       </mesh>
       <mesh position={[WALL_X, 1.5, BACK_Z / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
-        <meshStandardMaterial color={theme === 'dark' ? '#1e4060' : '#e0f2fe'} roughness={0.9} />
+        <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />
       </mesh>
       <mesh position={[0, FLOOR_Y, BACK_Z / 2]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
-        <meshStandardMaterial color={theme === 'dark' ? '#102030' : '#f8fafc'} roughness={1} />
+        <meshStandardMaterial color={room.floor} roughness={0.96} metalness={0.02} />
       </mesh>
       <mesh position={[0, CEIL_Y, BACK_Z / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
-        <meshStandardMaterial color={theme === 'dark' ? '#1a3550' : '#e0f2fe'} roughness={0.9} />
+        <meshStandardMaterial color={room.ceiling} roughness={0.92} metalness={0.02} />
+      </mesh>
+
+      <mesh position={[0, 2.75, BACK_Z + 0.01]}>
+        <planeGeometry args={[WALL_X * 1.55, 0.035]} />
+        <meshBasicMaterial color={room.accent} transparent opacity={theme === 'dark' ? 0.42 : 0.3} />
+      </mesh>
+      <mesh position={[0, 0.05, BACK_Z + 0.012]}>
+        <planeGeometry args={[WALL_X * 1.2, 0.025]} />
+        <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.36 : 0.24} />
+      </mesh>
+      {[-3.8, 3.8].map((x) => (
+        <mesh key={`wall-trim-${x}`} position={[x, 1.25, BACK_Z + 0.014]}>
+          <planeGeometry args={[0.035, CEIL_Y - FLOOR_Y - 1.2]} />
+          <meshBasicMaterial color={room.trim} transparent opacity={0.88} />
+        </mesh>
+      ))}
+      {[-3, 0, 3].map((x) => (
+        <mesh key={`floor-line-${x}`} position={[x, FLOOR_Y + 0.006, BACK_Z / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.024, Math.abs(BACK_Z) * 0.92]} />
+          <meshBasicMaterial color={room.accent} transparent opacity={theme === 'dark' ? 0.23 : 0.18} />
+        </mesh>
+      ))}
+      <mesh position={[0, FLOOR_Y + 0.008, -8.2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[WALL_X * 1.55, 0.035]} />
+        <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.28 : 0.18} />
       </mesh>
 
       {Array.from({ length: numBalls }, (_, i) => (
@@ -300,6 +370,8 @@ export default function SkeetTrackingCanvas({
   onCanvasReady,
   onViewModelReady,
 }) {
+  const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
+
   return (
     <Canvas
       dpr={[1, 1.5]}
@@ -307,7 +379,7 @@ export default function SkeetTrackingCanvas({
       camera={CAMERA_CONFIG}
       onCreated={onCanvasReady}
     >
-      <color attach="background" args={[theme === 'dark' ? BG_DARK : BG_LIGHT]} />
+      <color attach="background" args={[room.background]} />
       <Suspense fallback={null}>
         <GunViewModel active={viewModelActive} shootTrigger={0} onReady={onViewModelReady} />
       </Suspense>

@@ -68,7 +68,7 @@ function OptionGrid({ label, options, current, setValue, colorMode, theme, lang,
           const active = current === opt.value
           const bg = active ? (colorMode ? opt.value : '#22D3EE') : 'transparent'
           const border = active ? (colorMode ? opt.value : '#22D3EE') : (theme === 'light' ? '#CBD5E1' : '#334155')
-          const color = active ? '#fff' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1')
+          const color = active ? '#fff' : (theme === 'light' ? '#151A21' : '#F4F7FA')
 
           return (
             <button
@@ -121,11 +121,11 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const cm360 = eDPI > 0 ? 13063 / eDPI : 0
   const sensLevelInfo = getSensLevel(cm360, lang)
 
-  const bg = theme === 'dark' ? 'bg-[#060D18]' : 'bg-[#f0f9ff]'
+  const bg = theme === 'dark' ? 'bg-[#080B10]' : 'bg-[#F4F7F9]'
   const panelCls = theme === 'light'
-    ? 'bg-white/95 border-[#DDD8D2] text-[#1A1F2E]'
-    : 'bg-[#1B2E3D] border-[#2A3D4F] text-[#ECE8E1]'
-  const sub = theme === 'light' ? 'text-[#1A1F2E]/60' : 'text-[#ECE8E1]/60'
+    ? 'bg-white/95 border-[#D7E0E8] text-[#151A21]'
+    : 'bg-[#111820] border-[#27313A] text-[#F4F7FA]'
+  const sub = theme === 'light' ? 'text-[#151A21]/60' : 'text-[#AAB4C0]/70'
 
   const handleSensChange = useCallback((val) => {
     const next = Math.min(10, Math.max(0.01, val))
@@ -324,7 +324,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               <button
                 type="button"
                 onClick={() => navigate('/drills')}
-                className="px-8 py-2 rounded-xl bg-[#22D3EE] text-[#0A0F1E] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
+                className="px-8 py-2 rounded-xl bg-[#22D3EE] text-[#071013] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
               >
                 {lang === 'kr' ? '목록으로' : 'Back to List'}
               </button>
@@ -356,7 +356,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                       style={{
                         background: localDpi === dpi ? '#22D3EE' : 'transparent',
                         borderColor: localDpi === dpi ? '#22D3EE' : (theme === 'light' ? '#CBD5E1' : '#334155'),
-                        color: localDpi === dpi ? '#0A0F1E' : (theme === 'light' ? '#1A1F2E' : '#ECE8E1'),
+                        color: localDpi === dpi ? '#071013' : (theme === 'light' ? '#151A21' : '#F4F7FA'),
                       }}
                     >
                       {dpi}
@@ -390,7 +390,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
                         if (e.key === 'Escape') setSensEditing(false)
                       }}
                       className="w-14 px-1.5 py-0.5 rounded border border-[#22D3EE] text-[#22D3EE] text-sm font-bold text-right outline-none"
-                      style={{ background: theme === 'light' ? '#fff' : '#0A0F1E' }}
+                      style={{ background: theme === 'light' ? '#fff' : '#080B10' }}
                     />
                   ) : (
                     <button
@@ -484,7 +484,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               <button
                 type="button"
                 onClick={startTraining}
-                className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#0A0F1E] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
+                className="px-5 py-2 rounded-xl bg-[#22D3EE] text-[#071013] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
               >
                 {lang === 'kr' ? '시작' : 'Start'}
               </button>
@@ -524,9 +524,9 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       )}
 
       {started && !isPreparing && !isPointerLocked && !completed && (
-        <div className="absolute inset-0 z-[25] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+        <div className="absolute inset-0 z-[25] pointer-events-none flex items-center justify-center bg-black/25 backdrop-blur-[2px]">
           <div className="animate-bounce">
-            <p className="text-[#0A0F1E] text-xl font-bold bg-[#22D3EE] px-6 py-3 rounded-2xl shadow-2xl">
+            <p className="text-[#071013] text-xl font-bold bg-[#22D3EE] px-6 py-3 rounded-2xl shadow-2xl">
               {lang === 'kr' ? '클릭해서 계속하기' : 'Click to continue'}
             </p>
           </div>

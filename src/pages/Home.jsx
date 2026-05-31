@@ -20,7 +20,7 @@ function AimButton({ onClick, href, children, type = 'button', className = '' })
         padding: '8px',
         fontSize: '0.8rem',
         fontWeight: 900,
-        color: hovered ? '#0A0F1E' : '#22D3EE',
+        color: hovered ? '#071013' : '#22D3EE',
         textTransform: 'uppercase',
         textDecoration: 'none',
         boxShadow: 'none',
@@ -38,7 +38,7 @@ function AimButton({ onClick, href, children, type = 'button', className = '' })
           width:'100%', height:'100%', left:0, top:0,
           border: '1px solid #22D3EE', borderRadius: '14px',
         }}>
-          <span style={{ content:'""', width:2, height:2, left:-1, top:-1, background:'#0A0F1E', position:'absolute', transition:'0.3s ease-out all' }} />
+          <span style={{ content:'""', width:2, height:2, left:-1, top:-1, background:'#071013', position:'absolute', transition:'0.3s ease-out all' }} />
         </span>
         <span style={{
           position:'absolute', left:'-5%', top:0,
@@ -57,7 +57,7 @@ function AimButton({ onClick, href, children, type = 'button', className = '' })
           <span style={{
             position:'absolute', right:0, bottom:0,
             width:4, height:4,
-            background: hovered ? '#0A0F1E' : 'transparent',
+            background: hovered ? '#071013' : 'transparent',
             transition:'0.3s ease-out all', zIndex:5,
           }} />
         </span>
@@ -126,7 +126,7 @@ function SetupModal({ theme, onClose, onConfirm }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div className={`w-full max-w-md rounded-3xl border shadow-2xl p-7 ${
-        dark ? 'bg-[#111827] border-[#1E293B] text-[#F1F5F9]' : 'bg-white border-[#DDD8D2] text-[#1A1F2E]'
+        dark ? 'bg-[#111820] border-[#27313A] text-[#F4F7FA]' : 'bg-white border-[#D7E0E8] text-[#151A21]'
       }`}>
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -139,7 +139,7 @@ function SetupModal({ theme, onClose, onConfirm }) {
             type="button"
             onClick={onClose}
             className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${
-              dark ? 'text-[#64748B] hover:bg-[#1E293B] hover:text-[#F1F5F9]' : 'text-[#7A7E85] hover:bg-[#F5F0EA] hover:text-[#1A1F2E]'
+              dark ? 'text-[#8A94A3] hover:bg-[#19212B] hover:text-[#F4F7FA]' : 'text-[#64717F] hover:bg-[#EEF3F6] hover:text-[#151A21]'
             }`}
           >
             ×
@@ -159,10 +159,10 @@ function SetupModal({ theme, onClose, onConfirm }) {
                 onClick={() => setDpi(preset)}
                 className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
                   dpi === preset
-                    ? 'bg-[#22D3EE] border-[#22D3EE] text-[#0A0F1E]'
+                    ? 'bg-[#22D3EE] border-[#22D3EE] text-[#071013]'
                     : dark
-                    ? 'border-[#1E293B] text-[#64748B] hover:border-[#22D3EE] hover:text-[#22D3EE]'
-                    : 'border-[#DDD8D2] text-[#7A7E85] hover:border-[#22D3EE] hover:text-[#22D3EE]'
+                    ? 'border-[#27313A] text-[#8A94A3] hover:border-[#22D3EE] hover:text-[#22D3EE]'
+                    : 'border-[#D7E0E8] text-[#64717F] hover:border-[#0891B2] hover:text-[#0891B2]'
                 }`}
               >
                 {preset}
@@ -175,8 +175,8 @@ function SetupModal({ theme, onClose, onConfirm }) {
             onChange={(e) => handleDpiInput(e.target.value)}
             className={`w-full rounded-xl border px-4 py-2.5 text-sm font-bold outline-none focus:border-[#22D3EE] transition-colors ${
               dark
-                ? 'bg-[#0A0F1E] border-[#1E293B] text-[#F1F5F9] placeholder-[#64748B]'
-                : 'bg-[#F5F0EA] border-[#DDD8D2] text-[#1A1F2E] placeholder-[#7A7E85]'
+                ? 'bg-[#080B10] border-[#27313A] text-[#F4F7FA] placeholder-[#8A94A3]'
+                : 'bg-[#EEF3F6] border-[#D7E0E8] text-[#151A21] placeholder-[#64717F]'
             }`}
             placeholder={t.customInput}
             min="100"
@@ -195,8 +195,8 @@ function SetupModal({ theme, onClose, onConfirm }) {
               onClick={() => stepSens(-0.01)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border transition-all ${
                 dark
-                  ? 'border-[#1E293B] text-[#64748B] hover:border-[#22D3EE] hover:text-[#22D3EE]'
-                  : 'border-[#DDD8D2] text-[#7A7E85] hover:border-[#22D3EE] hover:text-[#22D3EE]'
+                  ? 'border-[#27313A] text-[#8A94A3] hover:border-[#22D3EE] hover:text-[#22D3EE]'
+                  : 'border-[#D7E0E8] text-[#64717F] hover:border-[#0891B2] hover:text-[#0891B2]'
               }`}
             >
               −
@@ -208,8 +208,8 @@ function SetupModal({ theme, onClose, onConfirm }) {
               onBlur={handleSensBlur}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-center text-xl font-black outline-none focus:border-[#22D3EE] transition-colors ${
                 dark
-                  ? 'bg-[#0A0F1E] border-[#1E293B] text-[#F1F5F9]'
-                  : 'bg-[#F5F0EA] border-[#DDD8D2] text-[#1A1F2E]'
+                  ? 'bg-[#080B10] border-[#27313A] text-[#F4F7FA]'
+                  : 'bg-[#EEF3F6] border-[#D7E0E8] text-[#151A21]'
               }`}
               step="0.01"
               min="0.01"
@@ -220,8 +220,8 @@ function SetupModal({ theme, onClose, onConfirm }) {
               onClick={() => stepSens(0.01)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border transition-all ${
                 dark
-                  ? 'border-[#1E293B] text-[#64748B] hover:border-[#22D3EE] hover:text-[#22D3EE]'
-                  : 'border-[#DDD8D2] text-[#7A7E85] hover:border-[#22D3EE] hover:text-[#22D3EE]'
+                  ? 'border-[#27313A] text-[#8A94A3] hover:border-[#22D3EE] hover:text-[#22D3EE]'
+                  : 'border-[#D7E0E8] text-[#64717F] hover:border-[#0891B2] hover:text-[#0891B2]'
               }`}
             >
               +
@@ -231,18 +231,18 @@ function SetupModal({ theme, onClose, onConfirm }) {
 
         {/* Stats Preview */}
         <div className={`rounded-2xl p-4 mb-6 flex justify-around ${
-          dark ? 'bg-[#0A0F1E]' : 'bg-[#F5F0EA]'
+          dark ? 'bg-[#080B10]' : 'bg-[#EEF3F6]'
         }`}>
           <div className="text-center">
             <p className={`text-xs mb-1 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>eDPI</p>
             <p className="text-2xl font-black text-[#22D3EE]">{eDPI}</p>
           </div>
-          <div className={`w-px ${dark ? 'bg-[#1E293B]' : 'bg-[#DDD8D2]'}`} />
+          <div className={`w-px ${dark ? 'bg-[#27313A]' : 'bg-[#D7E0E8]'}`} />
           <div className="text-center">
             <p className={`text-xs mb-1 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>cm/360°</p>
             <p className={`text-2xl font-black ${dark ? 'text-[#F1F5F9]' : 'text-[#1A1F2E]'}`}>{cmPer360}</p>
           </div>
-          <div className={`w-px ${dark ? 'bg-[#1E293B]' : 'bg-[#DDD8D2]'}`} />
+          <div className={`w-px ${dark ? 'bg-[#27313A]' : 'bg-[#D7E0E8]'}`} />
           <div className="text-center">
             <p className={`text-xs mb-1 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>{t.level}</p>
             <p className={`text-base font-bold ${sensLevel.color}`}>{sensLevel.label}</p>
@@ -312,14 +312,14 @@ function Home() {
       )}
 
       {/* Hero */}
-      <section className={`relative overflow-hidden ${dark ? 'bg-[#0A0F1E]' : 'bg-[#F0F9FF]'}`}>
+      <section className={`relative overflow-hidden ${dark ? 'bg-[#080B10]' : 'bg-[#F4F7F9]'}`}>
         {/* Background glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: dark
-              ? 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,211,238,0.08) 0%, transparent 70%)'
-              : 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 70%)',
+              ? 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,211,238,0.07) 0%, transparent 70%)'
+              : 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(8,145,178,0.08) 0%, transparent 70%)',
           }}
         />
 
@@ -358,7 +358,7 @@ function Home() {
 
           {/* Stats bar */}
           <div className={`mt-16 max-w-lg mx-auto rounded-2xl border px-8 py-5 flex justify-around ${
-            dark ? 'bg-[#111827]/80 border-[#1E293B]' : 'bg-white/80 border-[#BAE6FD]'
+            dark ? 'bg-[#111820]/80 border-[#27313A]' : 'bg-white/80 border-[#D7E0E8]'
           }`}>
             {[
               { value: '1', label: dark ? '훈련 모듈' : 'Drill Modules' },
@@ -375,7 +375,7 @@ function Home() {
 
       {/* Divider */}
       <div className="max-w-6xl mx-auto px-5">
-        <div className={`h-px ${dark ? 'bg-[#1E293B]' : 'bg-[#BAE6FD]'}`} />
+        <div className={`h-px ${dark ? 'bg-[#27313A]' : 'bg-[#D7E0E8]'}`} />
       </div>
 
       {/* Features */}
@@ -399,7 +399,7 @@ function Home() {
               <div
                 key={i}
                 className={`rounded-3xl border p-7 ${
-                  dark ? 'bg-[#111827] border-[#1E293B]' : 'bg-[#F0F9FF] border-[#BAE6FD]'
+                  dark ? 'bg-[#111820] border-[#27313A]' : 'bg-[#F4F7F9] border-[#D7E0E8]'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${
@@ -416,10 +416,10 @@ function Home() {
       </section>
 
       {/* Bottom CTA */}
-      <section className={`py-20 ${dark ? 'bg-[#0A0F1E]' : 'bg-[#F0F9FF]'}`}>
+      <section className={`py-20 ${dark ? 'bg-[#080B10]' : 'bg-[#F4F7F9]'}`}>
         <div className="max-w-6xl mx-auto px-5">
           <div className={`rounded-3xl p-12 text-center relative overflow-hidden ${
-            dark ? 'bg-[#111827] border border-[#1E293B]' : 'bg-white border border-[#BAE6FD]'
+            dark ? 'bg-[#111820] border border-[#27313A]' : 'bg-white border border-[#D7E0E8]'
           }`}>
             <div
               className="absolute inset-0 pointer-events-none"

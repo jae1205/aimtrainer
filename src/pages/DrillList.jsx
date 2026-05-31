@@ -26,12 +26,12 @@ function DrillCard({ drill, dark, lang }) {
   const [hovered, setHovered] = useState(false)
 
   const C = {
-    card: dark ? '#111827' : '#ffffff',
-    border: dark ? '#1E293B' : '#BAE6FD',
+    card: dark ? '#111820' : '#ffffff',
+    border: dark ? '#27313A' : '#D7E0E8',
     borderHover: '#22D3EE',
-    text: dark ? '#F1F5F9' : '#0F172A',
-    muted: dark ? '#64748B' : '#94A3B8',
-    tag: dark ? 'rgba(34,211,238,0.12)' : 'rgba(34,211,238,0.1)',
+    text: dark ? '#F4F7FA' : '#151A21',
+    muted: dark ? '#8A94A3' : '#64717F',
+    tag: dark ? 'rgba(34,211,238,0.12)' : 'rgba(8,145,178,0.1)',
   }
 
   return (
@@ -97,9 +97,9 @@ function DrillList() {
   }, [])
 
   const C = {
-    bg: dark ? '#0A0F1E' : '#F0F9FF',
-    text: dark ? '#F1F5F9' : '#0F172A',
-    muted: dark ? '#64748B' : '#94A3B8',
+    bg: dark ? '#080B10' : '#F4F7F9',
+    text: dark ? '#F4F7FA' : '#151A21',
+    muted: dark ? '#8A94A3' : '#64717F',
   }
 
   return (

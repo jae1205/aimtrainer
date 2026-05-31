@@ -27,6 +27,7 @@ function Layout({ children, isTestPage = false }) {
   }
   const theme = resolveTheme(themeMode)
   const dark = theme === 'dark'
+  const chromeDark = isTestPage || dark
 
   /* ── Test fullscreen ─────────────────────────────────────────── */
   const [testActive, setTestActive] = useState(false)
@@ -88,32 +89,32 @@ function Layout({ children, isTestPage = false }) {
   }, [settingsOpen])
 
   /* ── Color tokens ────────────────────────────────────────────── */
-  const C = dark ? {
-    bg:        '#0A0F1E',
-    card:      '#111827',
-    border:    '#1E293B',
-    divider:   '#1E293B',
-    muted:     '#64748B',
-    text:      '#F1F5F9',
-    hover:     '#1E293B',
-    hoverText: '#F1F5F9',
-    sliderBg:  '#1E293B',
-    navBg:     'rgba(10,15,30,0.92)',
-    footerBg:  '#0A0F1E',
-    label:     '#475569',
+  const C = chromeDark ? {
+    bg:        '#080B10',
+    card:      '#111820',
+    border:    '#27313A',
+    divider:   '#202A34',
+    muted:     '#8A94A3',
+    text:      '#F4F7FA',
+    hover:     '#19212B',
+    hoverText: '#F4F7FA',
+    sliderBg:  '#27313A',
+    navBg:     'rgba(8,11,16,0.92)',
+    footerBg:  '#080B10',
+    label:     '#6F7B88',
   } : {
-    bg:        '#F0F9FF',
+    bg:        '#F4F7F9',
     card:      '#FFFFFF',
-    border:    '#BAE6FD',
-    divider:   '#E0F2FE',
-    muted:     '#64748B',
-    text:      '#0F172A',
-    hover:     '#E0F2FE',
-    hoverText: '#0F172A',
-    sliderBg:  '#BAE6FD',
-    navBg:     'rgba(240,249,255,0.92)',
-    footerBg:  '#F0F9FF',
-    label:     '#94A3B8',
+    border:    '#D7E0E8',
+    divider:   '#E4EAF0',
+    muted:     '#64717F',
+    text:      '#151A21',
+    hover:     '#E8F1F5',
+    hoverText: '#151A21',
+    sliderBg:  '#D7E0E8',
+    navBg:     'rgba(244,247,249,0.92)',
+    footerBg:  '#F4F7F9',
+    label:     '#8A94A3',
   }
 
   const themeOptions = [
@@ -173,7 +174,7 @@ function Layout({ children, isTestPage = false }) {
               to="/drills"
               className="inline-flex h-7 items-center justify-center rounded-md px-3 text-xs font-medium leading-none transition-all duration-150"
               style={{ color: C.muted }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = chromeDark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
               onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
             >
               {lang === 'kr' ? '훈련 목록' : 'Drills'}
@@ -188,7 +189,7 @@ function Layout({ children, isTestPage = false }) {
               className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
               style={{
                 color: settingsOpen ? '#22D3EE' : C.muted,
-                background: settingsOpen ? (dark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)') : 'transparent',
+                background: settingsOpen ? (chromeDark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)') : 'transparent',
               }}
               onMouseEnter={e => { if (!settingsOpen) { e.currentTarget.style.color = C.hoverText; e.currentTarget.style.background = C.hover } }}
               onMouseLeave={e => { if (!settingsOpen) { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' } }}
@@ -219,7 +220,7 @@ function Layout({ children, isTestPage = false }) {
                     style={{
                       background: lang === l ? '#22D3EE' : 'transparent',
                       borderColor: lang === l ? '#22D3EE' : C.border,
-                      color: lang === l ? '#0A0F1E' : C.muted,
+                      color: lang === l ? '#071013' : C.muted,
                     }}
                   >
                     {l.toUpperCase()}
@@ -240,13 +241,13 @@ function Layout({ children, isTestPage = false }) {
                     title={opt.label}
                     className="flex-1 aspect-square rounded-xl flex items-center justify-center border transition-all"
                     style={{
-                      background: crosshair === opt.key ? (dark ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.1)') : 'transparent',
+                      background: crosshair === opt.key ? (chromeDark ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.1)') : 'transparent',
                       borderColor: crosshair === opt.key ? '#22D3EE' : C.border,
                       padding: '6px',
                     }}
                   >
                     <span className="w-5 h-5 flex items-center justify-center"
-                      style={{ background: '#0A0F1E', borderRadius: 6, width: 28, height: 28 }}>
+                      style={{ background: '#080B10', borderRadius: 6, width: 28, height: 28 }}>
                       {opt.preview}
                     </span>
                   </button>
@@ -267,7 +268,7 @@ function Layout({ children, isTestPage = false }) {
                     style={{
                       background: themeMode === opt.key ? '#22D3EE' : 'transparent',
                       borderColor: themeMode === opt.key ? '#22D3EE' : C.border,
-                      color: themeMode === opt.key ? '#0A0F1E' : C.muted,
+                      color: themeMode === opt.key ? '#071013' : C.muted,
                     }}
                   >
                     {opt.icon}
