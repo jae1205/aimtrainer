@@ -162,7 +162,7 @@ function Layout({ children, isTestPage = false }) {
 
           {/* Logo + Program buttons */}
           <div className="flex items-center gap-4">
-            <Link to="/" aria-label="AimForge home" className="flex items-center gap-1">
+            <Link to="/" aria-label="AimForge home" className="inline-flex items-center gap-1">
               <span className="text-lg font-black tracking-tight">
                 <span className="text-[#22D3EE]">Aim</span>
                 <span style={{ color: C.text }}>Forge</span>
@@ -171,12 +171,12 @@ function Layout({ children, isTestPage = false }) {
 
             <Link
               to="/drills"
-              className="px-3 h-7 rounded-md text-xs font-medium transition-all duration-150"
+              className="inline-flex h-7 items-center justify-center rounded-md px-3 text-xs font-medium leading-none transition-all duration-150"
               style={{ color: C.muted }}
               onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
               onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
             >
-              {lang === 'kr' ? '훈련목록' : 'Drills'}
+              {lang === 'kr' ? '훈련 목록' : 'Drills'}
             </Link>
           </div>
 

@@ -512,12 +512,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
           <div className={`w-full max-w-sm rounded-3xl border px-7 py-6 text-center shadow-2xl ${panelCls}`}>
             <div className="mx-auto mb-5 h-12 w-12 rounded-full border-4 border-[#22D3EE]/20 border-t-[#22D3EE] animate-spin" />
             <p className="text-xs font-bold uppercase tracking-widest text-[#22D3EE] mb-2">
-              {lang === 'kr' ? '훈련 환경 준비 중' : 'Preparing Training'}
-            </p>
-            <p className={`text-sm font-semibold leading-relaxed ${sub}`}>
-              {lang === 'kr'
-                ? 'Chrome에서도 화면이 멈춘 것처럼 보이지 않도록 3D 환경을 분리해서 불러오는 중입니다.'
-                : 'Loading the 3D scene separately so Chrome stays responsive.'}
+              {lang === 'kr' ? '훈련 화면 준비 중' : 'Preparing Training'}
             </p>
             <div className="mt-5 flex justify-center gap-1.5">
               <span className="h-1.5 w-8 rounded-full bg-[#22D3EE] animate-pulse" />
