@@ -15,6 +15,14 @@ const WALL_X = 6
 const FLOOR_Y = -2.0
 const CEIL_Y = 4.5
 const BACK_Z = -12
+const SEAM_OVERLAP = 0.36
+const SEAM_COVE_HEIGHT = 0.42
+const PLAYER_BOUNDS = {
+  minX: -4.6,
+  maxX: 4.6,
+  minZ: BACK_Z + 2.2,
+  maxZ: -0.15,
+}
 const TARGET_WINDOW = {
   width: 5.2,
   height: 3.1,
@@ -152,9 +160,19 @@ function playBeep(damagePct) {
   } catch {}
 }
 
-function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
+function PlayerController({ sensitivityMultiplier = 1, dpi = 800, movementEnabled = false }) {
   const { camera } = useThree()
   const rotation = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
+  const keys = useRef({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    sprint: false,
+  })
+  const moveForward = useRef(new THREE.Vector3())
+  const moveRight = useRef(new THREE.Vector3())
+  const moveVector = useRef(new THREE.Vector3())
 
   const handleMouseMove = useCallback((e) => {
     if (!document.pointerLockElement) return
@@ -171,6 +189,89 @@ function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [camera, handleMouseMove])
+
+  useEffect(() => {
+    const clearKeys = () => {
+      keys.current.forward = false
+      keys.current.backward = false
+      keys.current.left = false
+      keys.current.right = false
+      keys.current.sprint = false
+    }
+
+    const setKey = (event, pressed) => {
+      switch (event.code) {
+        case 'KeyW':
+        case 'ArrowUp':
+          keys.current.forward = pressed
+          break
+        case 'KeyS':
+        case 'ArrowDown':
+          keys.current.backward = pressed
+          break
+        case 'KeyA':
+        case 'ArrowLeft':
+          keys.current.left = pressed
+          break
+        case 'KeyD':
+        case 'ArrowRight':
+          keys.current.right = pressed
+          break
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.sprint = pressed
+          break
+        default:
+          return
+      }
+
+      if (document.pointerLockElement) event.preventDefault()
+    }
+
+    const handleKeyDown = (event) => setKey(event, true)
+    const handleKeyUp = (event) => setKey(event, false)
+    const handlePointerLockChange = () => {
+      if (!document.pointerLockElement) clearKeys()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', clearKeys)
+    document.addEventListener('pointerlockchange', handlePointerLockChange)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', clearKeys)
+      document.removeEventListener('pointerlockchange', handlePointerLockChange)
+    }
+  }, [])
+
+  useFrame((_, delta) => {
+    if (!movementEnabled || !document.pointerLockElement) return
+
+    moveForward.current.set(0, 0, -1).applyQuaternion(camera.quaternion)
+    moveForward.current.y = 0
+    moveForward.current.normalize()
+
+    moveRight.current.set(1, 0, 0).applyQuaternion(camera.quaternion)
+    moveRight.current.y = 0
+    moveRight.current.normalize()
+
+    moveVector.current.set(0, 0, 0)
+    if (keys.current.forward) moveVector.current.add(moveForward.current)
+    if (keys.current.backward) moveVector.current.sub(moveForward.current)
+    if (keys.current.right) moveVector.current.add(moveRight.current)
+    if (keys.current.left) moveVector.current.sub(moveRight.current)
+
+    if (moveVector.current.lengthSq() === 0) return
+
+    const speed = keys.current.sprint ? 3.3 : 2.15
+    moveVector.current.normalize().multiplyScalar(speed * delta)
+    camera.position.add(moveVector.current)
+    camera.position.x = Math.max(PLAYER_BOUNDS.minX, Math.min(PLAYER_BOUNDS.maxX, camera.position.x))
+    camera.position.y = 0
+    camera.position.z = Math.max(PLAYER_BOUNDS.minZ, Math.min(PLAYER_BOUNDS.maxZ, camera.position.z))
+  })
 
   return null
 }
@@ -207,6 +308,8 @@ function Scene({
   const sideWallWidth = WALL_X - windowHalfW
   const topWallHeight = CEIL_Y - windowTop
   const bottomWallHeight = windowBottom - FLOOR_Y
+  const sideWallHeight = CEIL_Y - FLOOR_Y + SEAM_OVERLAP
+  const sideWallCenterY = FLOOR_Y + (CEIL_Y - FLOOR_Y) / 2 - SEAM_OVERLAP / 2
   const wallPieces = [
     { key: 'top', position: [0, windowTop + topWallHeight / 2, BACK_Z], size: [WALL_X * 2, topWallHeight] },
     { key: 'bottom', position: [0, FLOOR_Y + bottomWallHeight / 2, BACK_Z], size: [WALL_X * 2, bottomWallHeight] },
@@ -331,7 +434,7 @@ function Scene({
 
   return (
     <>
-      <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
+      <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} movementEnabled={active} />
       <color attach="background" args={[room.background]} />
       <fog attach="fog" args={[room.fog, room.fogNear, room.fogFar]} />
       <ambientLight intensity={room.ambient} />
@@ -357,24 +460,44 @@ function Scene({
           <meshStandardMaterial color={room.frame} roughness={0.82} metalness={0.08} />
         </mesh>
       ))}
-      <mesh position={[-WALL_X, 1.5, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
+      <mesh position={[-WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[Math.abs(BACK_Z), sideWallHeight]} />
         {theme === 'light'
           ? <meshBasicMaterial color={room.sideWall} />
           : <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />}
       </mesh>
-      <mesh position={[WALL_X, 1.5, BACK_Z / 2]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
+      <mesh position={[WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[Math.abs(BACK_Z), sideWallHeight]} />
         {theme === 'light'
           ? <meshBasicMaterial color={room.sideWall} />
           : <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />}
       </mesh>
       <mesh position={[0, FLOOR_Y, BACK_Z / 2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
+        <planeGeometry args={[WALL_X * 2 + SEAM_OVERLAP * 2, Math.abs(BACK_Z)]} />
         {theme === 'light'
           ? <meshBasicMaterial color={room.floor} />
           : <meshStandardMaterial color={room.floor} roughness={0.96} metalness={0.02} />}
       </mesh>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={`floor-seam-cover-${side}`}
+          position={[side * (WALL_X - SEAM_OVERLAP / 2), FLOOR_Y + 0.006, BACK_Z / 2]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <planeGeometry args={[SEAM_OVERLAP + 0.22, Math.abs(BACK_Z)]} />
+          <meshBasicMaterial color={room.floor} />
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh
+          key={`wall-cove-cover-${side}`}
+          position={[side * (WALL_X - 0.006), FLOOR_Y + SEAM_COVE_HEIGHT / 2, BACK_Z / 2]}
+          rotation={[0, side < 0 ? Math.PI / 2 : -Math.PI / 2, 0]}
+        >
+          <planeGeometry args={[Math.abs(BACK_Z), SEAM_COVE_HEIGHT]} />
+          <meshBasicMaterial color={room.floor} />
+        </mesh>
+      ))}
       <mesh position={[0, CEIL_Y, BACK_Z / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
         <meshStandardMaterial color={room.ceiling} roughness={0.92} metalness={0.02} />
