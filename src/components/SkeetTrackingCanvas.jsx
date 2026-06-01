@@ -66,7 +66,7 @@ const ROOM_THEME = {
     sideWall: '#CBD6DE',
     floor: '#CBD6DE',
     ceiling: '#E8F0F5',
-    opening: '#F8FCFF',
+    opening: '#C5D5DF',
     frame: '#A8BAC7',
     hpBorder: '#A8BAC7',
     hpTrack: '#D9E5EC',
@@ -486,9 +486,7 @@ function Scene({
       ))}
       <mesh position={[0, TARGET_WINDOW.centerY, TARGET_WINDOW.insetZ]}>
         <planeGeometry args={[TARGET_WINDOW.width, TARGET_WINDOW.height]} />
-        {theme === 'light'
-          ? <meshBasicMaterial color={room.opening} fog={false} toneMapped={false} />
-          : <meshStandardMaterial color={room.opening} roughness={0.95} metalness={0.02} />}
+        <meshStandardMaterial color={room.opening} roughness={0.95} metalness={0.02} />
       </mesh>
       {framePieces.map((piece) => (
         <mesh key={piece.key} position={piece.position}>
