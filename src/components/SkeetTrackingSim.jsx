@@ -334,7 +334,9 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       )}
 
       {!started && !completed && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+        <div className={`absolute inset-0 z-30 flex items-center justify-center backdrop-blur-sm px-6 ${
+          theme === 'light' ? 'bg-[#EAF3F7]/68' : 'bg-black/60'
+        }`}>
           <div className="flex flex-col lg:flex-row items-stretch gap-4">
             <div className={`p-4 rounded-3xl border shadow-2xl w-full lg:w-56 shrink-0 flex flex-col gap-3 ${panelCls}`}>
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">
@@ -505,7 +507,9 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
 
       {started && isPreparing && !completed && (
         <div
-          className="absolute inset-0 z-[32] flex items-center justify-center bg-[#06111F]/92 backdrop-blur-md px-6"
+          className={`absolute inset-0 z-[32] flex items-center justify-center backdrop-blur-md px-6 ${
+            theme === 'light' ? 'bg-[#EAF3F7]/88' : 'bg-[#06111F]/92'
+          }`}
           role="status"
           aria-live="polite"
         >
@@ -524,7 +528,9 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       )}
 
       {started && !isPreparing && !isPointerLocked && !completed && (
-        <div className="absolute inset-0 z-[25] pointer-events-none flex items-center justify-center bg-black/25 backdrop-blur-[2px]">
+        <div className={`absolute inset-0 z-[25] pointer-events-none flex items-center justify-center backdrop-blur-[2px] ${
+          theme === 'light' ? 'bg-white/20' : 'bg-black/25'
+        }`}>
           <div className="animate-bounce">
             <p className="text-[#071013] text-xl font-bold bg-[#22D3EE] px-6 py-3 rounded-2xl shadow-2xl">
               {lang === 'kr' ? '클릭해서 계속하기' : 'Click to continue'}
@@ -534,8 +540,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
       )}
 
       {started && !isPreparing && countdown > 0 && (
-        <div className="absolute inset-0 z-[26] flex items-center justify-center bg-black/60">
-          <div className="text-white text-7xl font-black drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+        <div className={`absolute inset-0 z-[26] flex items-center justify-center ${
+          theme === 'light' ? 'bg-white/35' : 'bg-black/60'
+        }`}>
+          <div className={`${theme === 'light' ? 'text-[#071013]' : 'text-white'} text-7xl font-black drop-shadow-[0_0_20px_rgba(0,0,0,0.45)]`}>
             {countdown}
           </div>
         </div>

@@ -27,8 +27,16 @@ const ROOM_THEME = {
     floor: '#0D1218',
     ceiling: '#171F28',
     trim: '#26313D',
+    panel: '#1C2732',
+    panelBorder: '#394858',
+    grid: '#334455',
     accent: '#22D3EE',
     warmAccent: '#F59E0B',
+    targetFill: '#0B1118',
+    targetRing: '#22D3EE',
+    lane: '#5B6B7C',
+    fogNear: 10,
+    fogFar: 22,
     ambient: 0.52,
     hemiSky: '#7DD3FC',
     hemiGround: '#0B1118',
@@ -41,25 +49,33 @@ const ROOM_THEME = {
     rimIntensity: 0.55,
   },
   light: {
-    background: '#0E141A',
-    fog: '#0E141A',
-    backWall: '#303C47',
-    sideWall: '#26313B',
-    floor: '#202932',
-    ceiling: '#38434D',
-    trim: '#52606C',
-    accent: '#22D3EE',
+    background: '#EAF3F7',
+    fog: '#EAF3F7',
+    backWall: '#D9E5EC',
+    sideWall: '#E4EEF3',
+    floor: '#D1DDE5',
+    ceiling: '#F2F7FA',
+    trim: '#AFC2CF',
+    panel: '#F8FBFD',
+    panelBorder: '#9FB4C2',
+    grid: '#B8CAD6',
+    accent: '#0891B2',
     warmAccent: '#F59E0B',
-    ambient: 0.64,
-    hemiSky: '#A7DFF0',
-    hemiGround: '#0D141B',
-    hemiIntensity: 0.76,
-    keyLight: '#F4FAFF',
-    keyIntensity: 0.88,
-    fillLight: '#22D3EE',
-    fillIntensity: 0.72,
+    targetFill: '#FFFFFF',
+    targetRing: '#0891B2',
+    lane: '#7D93A3',
+    fogNear: 18,
+    fogFar: 38,
+    ambient: 0.82,
+    hemiSky: '#FFFFFF',
+    hemiGround: '#C5D4DE',
+    hemiIntensity: 0.8,
+    keyLight: '#FFFFFF',
+    keyIntensity: 0.9,
+    fillLight: '#8ED8E8',
+    fillIntensity: 0.58,
     rimLight: '#F59E0B',
-    rimIntensity: 0.34,
+    rimIntensity: 0.24,
   },
 }
 
@@ -272,7 +288,7 @@ function Scene({
     <>
       <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
       <color attach="background" args={[room.background]} />
-      <fog attach="fog" args={[room.fog, 10, 22]} />
+      <fog attach="fog" args={[room.fog, room.fogNear, room.fogFar]} />
       <ambientLight intensity={room.ambient} />
       <hemisphereLight args={[room.hemiSky, room.hemiGround, room.hemiIntensity]} />
       <directionalLight position={[-3.5, 5.4, -4.5]} intensity={room.keyIntensity} color={room.keyLight} />
@@ -301,13 +317,53 @@ function Scene({
         <meshStandardMaterial color={room.ceiling} roughness={0.92} metalness={0.02} />
       </mesh>
 
+      {[-3.6, 0, 3.6].map((x) => (
+        <group key={`target-bay-${x}`} position={[x, 1.28, BACK_Z + 0.018]}>
+          <mesh>
+            <planeGeometry args={[1.45, 1.75]} />
+            <meshBasicMaterial color={room.panel} transparent opacity={theme === 'dark' ? 0.24 : 0.68} />
+          </mesh>
+          <mesh position={[0, 0, 0.003]}>
+            <circleGeometry args={[0.64, 56]} />
+            <meshBasicMaterial color={room.targetFill} transparent opacity={theme === 'dark' ? 0.18 : 0.5} />
+          </mesh>
+          <mesh position={[0, 0, 0.006]}>
+            <ringGeometry args={[0.52, 0.56, 56]} />
+            <meshBasicMaterial color={room.targetRing} transparent opacity={theme === 'dark' ? 0.6 : 0.72} />
+          </mesh>
+          <mesh position={[0, 0, 0.008]}>
+            <ringGeometry args={[0.28, 0.31, 56]} />
+            <meshBasicMaterial color={room.targetRing} transparent opacity={theme === 'dark' ? 0.48 : 0.6} />
+          </mesh>
+          <mesh position={[0, 0, 0.01]}>
+            <circleGeometry args={[0.055, 24]} />
+            <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.72 : 0.82} />
+          </mesh>
+          <mesh position={[0, 0, 0.004]}>
+            <planeGeometry args={[1.62, 0.025]} />
+            <meshBasicMaterial color={room.panelBorder} transparent opacity={theme === 'dark' ? 0.58 : 0.7} />
+          </mesh>
+          <mesh position={[0, 0, 0.005]} rotation={[0, 0, Math.PI / 2]}>
+            <planeGeometry args={[1.62, 0.025]} />
+            <meshBasicMaterial color={room.panelBorder} transparent opacity={theme === 'dark' ? 0.58 : 0.7} />
+          </mesh>
+        </group>
+      ))}
+
+      {[-4.6, -2.3, 2.3, 4.6].map((x) => (
+        <mesh key={`ceiling-light-${x}`} position={[x, CEIL_Y - 0.018, -6.3]} rotation={[Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.68, 0.055]} />
+          <meshBasicMaterial color={theme === 'dark' ? room.accent : '#FFFFFF'} transparent opacity={theme === 'dark' ? 0.28 : 0.72} />
+        </mesh>
+      ))}
+
       <mesh position={[0, 2.75, BACK_Z + 0.01]}>
         <planeGeometry args={[WALL_X * 1.55, 0.035]} />
-        <meshBasicMaterial color={room.accent} transparent opacity={theme === 'dark' ? 0.42 : 0.3} />
+        <meshBasicMaterial color={room.accent} transparent opacity={theme === 'dark' ? 0.42 : 0.36} />
       </mesh>
       <mesh position={[0, 0.05, BACK_Z + 0.012]}>
         <planeGeometry args={[WALL_X * 1.2, 0.025]} />
-        <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.36 : 0.24} />
+        <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.36 : 0.32} />
       </mesh>
       {[-3.8, 3.8].map((x) => (
         <mesh key={`wall-trim-${x}`} position={[x, 1.25, BACK_Z + 0.014]}>
@@ -318,13 +374,31 @@ function Scene({
       {[-3, 0, 3].map((x) => (
         <mesh key={`floor-line-${x}`} position={[x, FLOOR_Y + 0.006, BACK_Z / 2]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.024, Math.abs(BACK_Z) * 0.92]} />
-          <meshBasicMaterial color={room.accent} transparent opacity={theme === 'dark' ? 0.23 : 0.18} />
+          <meshBasicMaterial color={room.accent} transparent opacity={theme === 'dark' ? 0.23 : 0.24} />
+        </mesh>
+      ))}
+      {[-10.2, -8, -5.8, -3.6].map((z) => (
+        <mesh key={`range-depth-${z}`} position={[0, FLOOR_Y + 0.009, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[WALL_X * 1.72, 0.02]} />
+          <meshBasicMaterial color={room.grid} transparent opacity={theme === 'dark' ? 0.18 : 0.28} />
         </mesh>
       ))}
       <mesh position={[0, FLOOR_Y + 0.008, -8.2]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WALL_X * 1.55, 0.035]} />
-        <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.28 : 0.18} />
+        <meshBasicMaterial color={room.warmAccent} transparent opacity={theme === 'dark' ? 0.28 : 0.24} />
       </mesh>
+      {[-1, 1].flatMap((side) => (
+        [-9.4, -6.4, -3.4].map((z, idx) => (
+          <mesh
+            key={`side-panel-${side}-${idx}`}
+            position={[side * (WALL_X - 0.014), 0.85, z]}
+            rotation={[0, side > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}
+          >
+            <planeGeometry args={[1.45, 0.48]} />
+            <meshBasicMaterial color={room.panel} transparent opacity={theme === 'dark' ? 0.2 : 0.5} />
+          </mesh>
+        ))
+      ))}
 
       {Array.from({ length: numBalls }, (_, i) => (
         <group key={i} ref={(el) => { groups.current[i] = el }}>

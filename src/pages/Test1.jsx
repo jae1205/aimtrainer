@@ -8,11 +8,11 @@ const SkeetTrackingSim = lazy(preloadSkeetTracking)
 function TrainingLoading({ theme }) {
   return (
     <div className={`absolute inset-0 flex items-center justify-center ${
-      theme === 'light' ? 'bg-[#10161D]' : 'bg-[#080B10]'
+      theme === 'light' ? 'bg-[#F4F7F9]' : 'bg-[#080B10]'
     }`}>
       <div className={`rounded-3xl border px-8 py-6 text-center shadow-2xl ${
         theme === 'light'
-          ? 'bg-[#111820]/95 border-[#27313A] text-[#F4F7FA]'
+          ? 'bg-white/95 border-[#D7E0E8] text-[#151A21]'
           : 'bg-[#111820] border-[#27313A] text-[#F4F7FA]'
       }`}>
         <p className="text-xs font-semibold uppercase tracking-widest text-[#22D3EE]">
@@ -95,17 +95,17 @@ function Test1() {
   }, [sensitivityMultiplier])
 
   const { t } = useLanguage()
-  const sub = 'text-[#AAB4C0]'
+  const sub = theme === 'light' ? 'text-[#64717F]' : 'text-[#AAB4C0]'
   const boxCls = `px-5 py-2.5 rounded-2xl border backdrop-blur-md shadow-lg flex items-center gap-3 ${
-    theme === 'light' ? 'bg-[#111820]/88 border-[#27313A]' : 'bg-[#111820]/90 border-[#27313A]'
+    theme === 'light' ? 'bg-white/88 border-[#D7E0E8]' : 'bg-[#111820]/90 border-[#27313A]'
   }`
-  const valCls = 'text-xl font-black text-[#F4F7FA]'
+  const valCls = `text-xl font-black ${theme === 'light' ? 'text-[#151A21]' : 'text-[#F4F7FA]'}`
 
   return (
     <Layout isTestPage={true}>
       <div
         className={`relative overflow-hidden ${
-          theme === 'light' ? 'bg-[#10161D]' : 'bg-[#080B10]'
+          theme === 'light' ? 'bg-[#F4F7F9]' : 'bg-[#080B10]'
         } w-full flex-1 flex items-center justify-center`}
       >
         <Suspense fallback={<TrainingLoading theme={theme} />}>
