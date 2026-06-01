@@ -17,6 +17,7 @@ const CEIL_Y = 4.5
 const BACK_Z = -12
 const SEAM_OVERLAP = 0.36
 const SEAM_COVE_HEIGHT = 0.42
+const TARGET_TRAVEL_MARGIN = 0.95
 const PLAYER_BOUNDS = {
   minX: -4.6,
   maxX: 4.6,
@@ -28,8 +29,8 @@ const TARGET_WINDOW = {
   height: 3.1,
   centerY: 1.25,
   frame: 0.12,
-  targetZ: BACK_Z + 0.08,
-  insetZ: BACK_Z - 0.08,
+  targetZ: BACK_Z - 0.34,
+  insetZ: BACK_Z - 0.62,
 }
 
 const ROOM_THEME = {
@@ -99,6 +100,7 @@ function getWindowBounds(ballRadius) {
 function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   const bounds = getWindowBounds(ballRadius)
   const dir = Math.random() > 0.5 ? 1 : -1
+  const travelEdge = TARGET_WINDOW.width / 2 + TARGET_TRAVEL_MARGIN + ballRadius * 1.4
   const fullHeight = bounds.maxY - bounds.minY
   const arcHeight = fullHeight * (heightCfg?.arc ?? 0.2) * (0.9 + Math.random() * 0.22)
   const drop = fullHeight * (heightCfg?.drop ?? 0.45) * (0.85 + Math.random() * 0.25)
@@ -114,12 +116,12 @@ function makeWindowTarget(idx, total, ballRadius, heightCfg) {
 
   return {
     t: 0,
-    startX: dir > 0 ? bounds.minX : bounds.maxX,
-    endX: dir > 0 ? bounds.maxX : bounds.minX,
+    startX: dir > 0 ? -travelEdge : travelEdge,
+    endX: dir > 0 ? travelEdge : -travelEdge,
     startY,
     endY,
     arcHeight,
-    speed: 0.24 + Math.random() * 0.09,
+    speed: 0.34 + Math.random() * 0.1,
   }
 }
 
@@ -135,6 +137,22 @@ function getWindowTargetPosition(target, ballRadius) {
     Math.max(bounds.minY, Math.min(bounds.maxY, y)),
     TARGET_WINDOW.targetZ,
   ]
+}
+
+function isTargetInOpening(position, ballRadius) {
+  const x = Array.isArray(position) ? position[0] : position.x
+  const y = Array.isArray(position) ? position[1] : position.y
+  const halfW = TARGET_WINDOW.width / 2
+  const halfH = TARGET_WINDOW.height / 2
+  const minY = TARGET_WINDOW.centerY - halfH
+  const maxY = TARGET_WINDOW.centerY + halfH
+
+  return (
+    x + ballRadius > -halfW &&
+    x - ballRadius < halfW &&
+    y + ballRadius > minY &&
+    y - ballRadius < maxY
+  )
 }
 
 let audioCtx = null
@@ -372,15 +390,30 @@ function Scene({
       }
 
       group.position.set(...getWindowTargetPosition(target, ballRadius))
-      if (barGroup) barGroup.quaternion.copy(camera.quaternion)
+      const visibleInOpening = isTargetInOpening(group.position, ballRadius)
+      if (barGroup) {
+        barGroup.visible = visibleInOpening
+        barGroup.quaternion.copy(camera.quaternion)
+      }
     }
 
     if (!document.pointerLockElement) return
 
     raycaster.setFromCamera({ x: 0, y: 0 }, camera)
+    const visibleSpheres = []
+    const sphereIndexes = new Map()
+    for (let i = 0; i < numBalls; i++) {
+      const sphere = spheres.current[i]
+      const group = groups.current[i]
+      if (!sphere || !group || !isTargetInOpening(group.position, ballRadius)) continue
+
+      visibleSpheres.push(sphere)
+      sphereIndexes.set(sphere, i)
+    }
     const hits = new Set(
-      raycaster.intersectObjects(spheres.current.filter(Boolean))
-        .map((hit) => spheres.current.indexOf(hit.object)),
+      raycaster.intersectObjects(visibleSpheres)
+        .map((hit) => sphereIndexes.get(hit.object))
+        .filter((idx) => idx !== undefined),
     )
 
     if (statsRef) {
@@ -503,29 +536,37 @@ function Scene({
         <meshStandardMaterial color={room.ceiling} roughness={0.92} metalness={0.02} />
       </mesh>
 
-      {Array.from({ length: numBalls }, (_, i) => (
-        <group key={i} ref={(el) => { groups.current[i] = el }} position={getWindowTargetPosition(targets.current[i], ballRadius)}>
-          <mesh ref={(el) => { spheres.current[i] = el }}>
-            <sphereGeometry args={[ballRadius, 24, 24]} />
-            <meshStandardMaterial color={ballColor} roughness={0.6} metalness={0.2} />
-          </mesh>
+      {Array.from({ length: numBalls }, (_, i) => {
+        const initialPosition = getWindowTargetPosition(targets.current[i], ballRadius)
 
-          <group ref={(el) => { barGroups.current[i] = el }} position={[0, barY, 0]}>
-            <mesh position={[0, 0, -0.01]}>
-              <planeGeometry args={[barW + BORDER * 2, barH + BORDER * 2]} />
-              <meshBasicMaterial color={room.hpBorder} depthTest={false} />
+        return (
+          <group key={i} ref={(el) => { groups.current[i] = el }} position={initialPosition}>
+            <mesh ref={(el) => { spheres.current[i] = el }}>
+              <sphereGeometry args={[ballRadius, 24, 24]} />
+              <meshStandardMaterial color={ballColor} roughness={0.6} metalness={0.2} />
             </mesh>
-            <mesh>
-              <planeGeometry args={[barW, barH]} />
-              <meshBasicMaterial color={room.hpTrack} depthTest={false} />
-            </mesh>
-            <mesh ref={(el) => { hpFills.current[i] = el }} position={[0, 0, 0.01]}>
-              <planeGeometry args={[barW, barH]} />
-              <meshBasicMaterial color="#22c55e" depthTest={false} />
-            </mesh>
+
+            <group
+              ref={(el) => { barGroups.current[i] = el }}
+              position={[0, barY, 0]}
+              visible={isTargetInOpening(initialPosition, ballRadius)}
+            >
+              <mesh position={[0, 0, -0.01]}>
+                <planeGeometry args={[barW + BORDER * 2, barH + BORDER * 2]} />
+                <meshBasicMaterial color={room.hpBorder} depthWrite={false} />
+              </mesh>
+              <mesh>
+                <planeGeometry args={[barW, barH]} />
+                <meshBasicMaterial color={room.hpTrack} depthWrite={false} />
+              </mesh>
+              <mesh ref={(el) => { hpFills.current[i] = el }} position={[0, 0, 0.01]}>
+                <planeGeometry args={[barW, barH]} />
+                <meshBasicMaterial color="#22c55e" depthWrite={false} />
+              </mesh>
+            </group>
           </group>
-        </group>
-      ))}
+        )
+      })}
     </>
   )
 }
