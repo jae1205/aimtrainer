@@ -4,13 +4,12 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
 import * as THREE from 'three'
 
-const PLAYER_EYE_Y = 0.35
+const PLAYER_EYE_Y = 1.25
 const CAMERA_CONFIG = { position: [0, PLAYER_EYE_Y, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
-const BORDER = 0.015
 
 const WALL_X = 6
 const FLOOR_Y = -2.0
@@ -42,7 +41,6 @@ const ROOM_THEME = {
     floor: '#0D1218',
     ceiling: '#171F28',
     frame: '#2A3541',
-    hpBorder: '#2A3541',
     hpTrack: '#0B1118',
     fogNear: 10,
     fogFar: 22,
@@ -65,7 +63,6 @@ const ROOM_THEME = {
     floor: '#CBD6DE',
     ceiling: '#E8F0F5',
     frame: '#A8BAC7',
-    hpBorder: '#A8BAC7',
     hpTrack: '#D9E5EC',
     fogNear: 18,
     fogFar: 38,
@@ -545,10 +542,6 @@ function Scene({
               position={[0, barY, 0]}
               visible={isTargetInOpening(initialPosition, ballRadius)}
             >
-              <mesh position={[0, 0, -0.01]}>
-                <planeGeometry args={[barW + BORDER * 2, barH + BORDER * 2]} />
-                <meshBasicMaterial color={room.hpBorder} depthWrite={false} />
-              </mesh>
               <mesh>
                 <planeGeometry args={[barW, barH]} />
                 <meshBasicMaterial color={room.hpTrack} depthWrite={false} />
