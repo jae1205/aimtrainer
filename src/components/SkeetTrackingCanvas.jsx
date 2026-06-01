@@ -1,10 +1,8 @@
-import { lazy, Suspense, useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
 import * as THREE from 'three'
-
-const GunViewModel = lazy(() => import('./GunViewModel'))
 
 const CAMERA_CONFIG = { position: [0, 0, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
@@ -36,6 +34,8 @@ const ROOM_THEME = {
     ceiling: '#171F28',
     opening: '#05080D',
     frame: '#2A3541',
+    hpBorder: '#2A3541',
+    hpTrack: '#0B1118',
     fogNear: 10,
     fogFar: 22,
     ambient: 0.52,
@@ -53,11 +53,13 @@ const ROOM_THEME = {
     background: '#EAF3F7',
     fog: '#EAF3F7',
     backWall: '#D9E5EC',
-    sideWall: '#E4EEF3',
-    floor: '#D1DDE5',
-    ceiling: '#F2F7FA',
+    sideWall: '#CBD6DE',
+    floor: '#CBD6DE',
+    ceiling: '#E8F0F5',
     opening: '#C5D5DF',
     frame: '#A8BAC7',
+    hpBorder: '#A8BAC7',
+    hpTrack: '#D9E5EC',
     fogNear: 18,
     fogFar: 38,
     ambient: 0.82,
@@ -89,18 +91,42 @@ function getWindowBounds(ballRadius) {
 function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   const bounds = getWindowBounds(ballRadius)
   const dir = Math.random() > 0.5 ? 1 : -1
+  const fullHeight = bounds.maxY - bounds.minY
+  const arcHeight = fullHeight * (heightCfg?.arc ?? 0.2) * (0.9 + Math.random() * 0.22)
+  const drop = fullHeight * (heightCfg?.drop ?? 0.45) * (0.85 + Math.random() * 0.25)
+  const startMin = bounds.minY + drop + ballRadius * 0.35
+  const startMax = bounds.maxY - arcHeight - ballRadius * 0.25
   const laneT = total <= 1 ? 0.5 : (idx + 0.5) / total
-  const fullSpread = bounds.maxY - bounds.minY
-  const spread = fullSpread * (heightCfg?.spread ?? 0.78)
-  const jitter = Math.min(0.12, spread / Math.max(3, total * 2)) * (Math.random() - 0.5)
-  const y = TARGET_WINDOW.centerY + (laneT - 0.5) * spread + jitter
+  const safeRange = Math.max(0.05, startMax - startMin)
+  const spread = safeRange * (heightCfg?.spread ?? 0.85)
+  const spreadStart = startMin + (safeRange - spread) / 2
+  const jitter = Math.min(0.1, spread / Math.max(3, total * 2)) * (Math.random() - 0.5)
+  const startY = Math.max(startMin, Math.min(startMax, spreadStart + laneT * spread + jitter))
+  const endY = Math.max(bounds.minY, startY - drop)
 
   return {
-    x: dir > 0 ? bounds.minX : bounds.maxX,
-    y: Math.max(bounds.minY, Math.min(bounds.maxY, y)),
-    dir,
-    speed: 1.15 + Math.random() * 0.5,
+    t: 0,
+    startX: dir > 0 ? bounds.minX : bounds.maxX,
+    endX: dir > 0 ? bounds.maxX : bounds.minX,
+    startY,
+    endY,
+    arcHeight,
+    speed: 0.24 + Math.random() * 0.09,
   }
+}
+
+function getWindowTargetPosition(target, ballRadius) {
+  const bounds = getWindowBounds(ballRadius)
+  const t = Math.min(target.t, 1)
+  const x = target.startX + (target.endX - target.startX) * t
+  const linearY = target.startY + (target.endY - target.startY) * t
+  const y = linearY + target.arcHeight * 4 * t * (1 - t)
+
+  return [
+    x,
+    Math.max(bounds.minY, Math.min(bounds.maxY, y)),
+    TARGET_WINDOW.targetZ,
+  ]
 }
 
 let audioCtx = null
@@ -236,18 +262,13 @@ function Scene({
       const barGroup = barGroups.current[i]
       if (!group) continue
 
-      const bounds = getWindowBounds(ballRadius)
-      target.x += delta * target.speed * speedMult * target.dir
-
-      if (target.x >= bounds.maxX) {
-        target.x = bounds.maxX
-        target.dir = -1
-      } else if (target.x <= bounds.minX) {
-        target.x = bounds.minX
-        target.dir = 1
+      target.t += delta * target.speed * speedMult
+      if (target.t >= 1) {
+        resetBall(i)
+        continue
       }
 
-      group.position.set(target.x, target.y, TARGET_WINDOW.targetZ)
+      group.position.set(...getWindowTargetPosition(target, ballRadius))
       if (barGroup) barGroup.quaternion.copy(camera.quaternion)
     }
 
@@ -338,15 +359,21 @@ function Scene({
       ))}
       <mesh position={[-WALL_X, 1.5, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
-        <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />
+        {theme === 'light'
+          ? <meshBasicMaterial color={room.sideWall} />
+          : <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />}
       </mesh>
       <mesh position={[WALL_X, 1.5, BACK_Z / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
-        <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />
+        {theme === 'light'
+          ? <meshBasicMaterial color={room.sideWall} />
+          : <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />}
       </mesh>
       <mesh position={[0, FLOOR_Y, BACK_Z / 2]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
-        <meshStandardMaterial color={room.floor} roughness={0.96} metalness={0.02} />
+        {theme === 'light'
+          ? <meshBasicMaterial color={room.floor} />
+          : <meshStandardMaterial color={room.floor} roughness={0.96} metalness={0.02} />}
       </mesh>
       <mesh position={[0, CEIL_Y, BACK_Z / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
@@ -354,7 +381,7 @@ function Scene({
       </mesh>
 
       {Array.from({ length: numBalls }, (_, i) => (
-        <group key={i} ref={(el) => { groups.current[i] = el }}>
+        <group key={i} ref={(el) => { groups.current[i] = el }} position={getWindowTargetPosition(targets.current[i], ballRadius)}>
           <mesh ref={(el) => { spheres.current[i] = el }}>
             <sphereGeometry args={[ballRadius, 24, 24]} />
             <meshStandardMaterial color={ballColor} roughness={0.6} metalness={0.2} />
@@ -363,11 +390,11 @@ function Scene({
           <group ref={(el) => { barGroups.current[i] = el }} position={[0, barY, 0]}>
             <mesh position={[0, 0, -0.01]}>
               <planeGeometry args={[barW + BORDER * 2, barH + BORDER * 2]} />
-              <meshBasicMaterial color="#ffffff" depthTest={false} />
+              <meshBasicMaterial color={room.hpBorder} depthTest={false} />
             </mesh>
             <mesh>
               <planeGeometry args={[barW, barH]} />
-              <meshBasicMaterial color="#111111" depthTest={false} />
+              <meshBasicMaterial color={room.hpTrack} depthTest={false} />
             </mesh>
             <mesh ref={(el) => { hpFills.current[i] = el }} position={[0, 0, 0.01]}>
               <planeGeometry args={[barW, barH]} />
@@ -385,7 +412,6 @@ export default function SkeetTrackingCanvas({
   sensitivity,
   dpi,
   active,
-  viewModelActive,
   onDestroy,
   ballSpeed,
   ballHP,
@@ -399,6 +425,10 @@ export default function SkeetTrackingCanvas({
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
 
+  useEffect(() => {
+    onViewModelReady?.()
+  }, [onViewModelReady])
+
   return (
     <Canvas
       dpr={[1, 1.5]}
@@ -407,9 +437,6 @@ export default function SkeetTrackingCanvas({
       onCreated={onCanvasReady}
     >
       <color attach="background" args={[room.background]} />
-      <Suspense fallback={null}>
-        <GunViewModel active={viewModelActive} shootTrigger={0} onReady={onViewModelReady} />
-      </Suspense>
       <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
       <Scene
         sensitivity={sensitivity}

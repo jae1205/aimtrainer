@@ -31,9 +31,9 @@ const BALL_COUNT_OPTIONS = [
 ]
 
 const ARC_HEIGHT_CFG = {
-  low: { spread: 0.55 },
-  medium: { spread: 0.78 },
-  high: { spread: 1.0 },
+  low: { spread: 0.7, arc: 0.12, drop: 0.3 },
+  medium: { spread: 0.85, arc: 0.2, drop: 0.45 },
+  high: { spread: 1.0, arc: 0.28, drop: 0.58 },
 }
 
 const ARC_HEIGHT_OPTIONS = [
@@ -499,7 +499,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               <OptionGrid label={lang === 'kr' ? '공 색상' : 'Ball Color'} options={BALL_COLORS} current={ballColor} setValue={setBallColor} colorMode theme={theme} lang={lang} sub={sub} />
               <OptionGrid label={lang === 'kr' ? '공 크기' : 'Ball Size'} options={BALL_SIZE_OPTIONS} current={ballSize} setValue={setBallSize} theme={theme} lang={lang} sub={sub} />
               <OptionGrid label={lang === 'kr' ? '공 수' : 'Ball Count'} options={BALL_COUNT_OPTIONS} current={numBalls} setValue={setNumBalls} theme={theme} lang={lang} sub={sub} />
-              <OptionGrid label={lang === 'kr' ? '이동 높이' : 'Target Height'} options={ARC_HEIGHT_OPTIONS} current={arcHeight} setValue={setArcHeight} theme={theme} lang={lang} sub={sub} />
+              <OptionGrid label={lang === 'kr' ? '포물선 높이' : 'Arc Height'} options={ARC_HEIGHT_OPTIONS} current={arcHeight} setValue={setArcHeight} theme={theme} lang={lang} sub={sub} />
             </div>
           </div>
         </div>
