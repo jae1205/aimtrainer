@@ -31,7 +31,6 @@ const TARGET_WINDOW = {
   centerY: 1.25,
   frame: 0.12,
   targetZ: BACK_Z - 0.34,
-  insetZ: BACK_Z - 0.62,
 }
 
 const ROOM_THEME = {
@@ -42,7 +41,6 @@ const ROOM_THEME = {
     sideWall: '#111820',
     floor: '#0D1218',
     ceiling: '#171F28',
-    opening: '#05080D',
     frame: '#2A3541',
     hpBorder: '#2A3541',
     hpTrack: '#0B1118',
@@ -66,7 +64,6 @@ const ROOM_THEME = {
     sideWall: '#CBD6DE',
     floor: '#CBD6DE',
     ceiling: '#E8F0F5',
-    opening: '#C5D5DF',
     frame: '#A8BAC7',
     hpBorder: '#A8BAC7',
     hpTrack: '#D9E5EC',
@@ -484,10 +481,6 @@ function Scene({
           <meshStandardMaterial color={room.backWall} roughness={0.88} metalness={0.04} />
         </mesh>
       ))}
-      <mesh position={[0, TARGET_WINDOW.centerY, TARGET_WINDOW.insetZ]}>
-        <planeGeometry args={[TARGET_WINDOW.width, TARGET_WINDOW.height]} />
-        <meshStandardMaterial color={room.opening} roughness={0.95} metalness={0.02} />
-      </mesh>
       {framePieces.map((piece) => (
         <mesh key={piece.key} position={piece.position}>
           <planeGeometry args={piece.size} />
