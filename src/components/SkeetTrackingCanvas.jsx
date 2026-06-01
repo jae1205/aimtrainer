@@ -17,6 +17,14 @@ const WALL_X = 6
 const FLOOR_Y = -2.0
 const CEIL_Y = 4.5
 const BACK_Z = -12
+const TARGET_WINDOW = {
+  width: 5.2,
+  height: 3.1,
+  centerY: 1.25,
+  frame: 0.12,
+  targetZ: BACK_Z + 0.08,
+  insetZ: BACK_Z - 0.08,
+}
 
 const ROOM_THEME = {
   dark: {
@@ -26,6 +34,8 @@ const ROOM_THEME = {
     sideWall: '#111820',
     floor: '#0D1218',
     ceiling: '#171F28',
+    opening: '#05080D',
+    frame: '#2A3541',
     fogNear: 10,
     fogFar: 22,
     ambient: 0.52,
@@ -46,6 +56,8 @@ const ROOM_THEME = {
     sideWall: '#E4EEF3',
     floor: '#D1DDE5',
     ceiling: '#F2F7FA',
+    opening: '#C5D5DF',
+    frame: '#A8BAC7',
     fogNear: 18,
     fogFar: 38,
     ambient: 0.82,
@@ -61,28 +73,34 @@ const ROOM_THEME = {
   },
 }
 
-function makeArc(dir, arcCfg) {
-  const d = dir ?? (Math.random() > 0.5 ? 1 : -1)
+function getWindowBounds(ballRadius) {
+  const padding = ballRadius * 1.35
+  const halfW = TARGET_WINDOW.width / 2
+  const halfH = TARGET_WINDOW.height / 2
+
   return {
-    t: Math.random() * 0.8,
-    speed: 0.2 + Math.random() * 0.15,
-    p0: new THREE.Vector3(d * -(WALL_X + 1.2), -0.2 + (Math.random() - 0.5) * 1.2, -7),
-    p2: new THREE.Vector3(d * (WALL_X + 1.2), -0.2 + (Math.random() - 0.5) * 1.2, -7),
-    peakY: arcCfg.min + Math.random() * arcCfg.range,
+    minX: -halfW + padding,
+    maxX: halfW - padding,
+    minY: TARGET_WINDOW.centerY - halfH + padding,
+    maxY: TARGET_WINDOW.centerY + halfH - padding,
   }
 }
 
-function bezierPos(arc, t) {
-  const mt = 1 - t
-  const p1x = (arc.p0.x + arc.p2.x) / 2
-  const p1y = Math.max(arc.p0.y, arc.p2.y) + arc.peakY
-  const p1z = (arc.p0.z + arc.p2.z) / 2
+function makeWindowTarget(idx, total, ballRadius, heightCfg) {
+  const bounds = getWindowBounds(ballRadius)
+  const dir = Math.random() > 0.5 ? 1 : -1
+  const laneT = total <= 1 ? 0.5 : (idx + 0.5) / total
+  const fullSpread = bounds.maxY - bounds.minY
+  const spread = fullSpread * (heightCfg?.spread ?? 0.78)
+  const jitter = Math.min(0.12, spread / Math.max(3, total * 2)) * (Math.random() - 0.5)
+  const y = TARGET_WINDOW.centerY + (laneT - 0.5) * spread + jitter
 
-  return new THREE.Vector3(
-    mt * mt * arc.p0.x + 2 * mt * t * p1x + t * t * arc.p2.x,
-    mt * mt * arc.p0.y + 2 * mt * t * p1y + t * t * arc.p2.y,
-    mt * mt * arc.p0.z + 2 * mt * t * p1z + t * t * arc.p2.z,
-  )
+  return {
+    x: dir > 0 ? bounds.minX : bounds.maxX,
+    y: Math.max(bounds.minY, Math.min(bounds.maxY, y)),
+    dir,
+    speed: 1.15 + Math.random() * 0.5,
+  }
 }
 
 let audioCtx = null
@@ -156,6 +174,26 @@ function Scene({
   statsRef,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
+  const windowHalfW = TARGET_WINDOW.width / 2
+  const windowHalfH = TARGET_WINDOW.height / 2
+  const windowBottom = TARGET_WINDOW.centerY - windowHalfH
+  const windowTop = TARGET_WINDOW.centerY + windowHalfH
+  const sideWallWidth = WALL_X - windowHalfW
+  const topWallHeight = CEIL_Y - windowTop
+  const bottomWallHeight = windowBottom - FLOOR_Y
+  const wallPieces = [
+    { key: 'top', position: [0, windowTop + topWallHeight / 2, BACK_Z], size: [WALL_X * 2, topWallHeight] },
+    { key: 'bottom', position: [0, FLOOR_Y + bottomWallHeight / 2, BACK_Z], size: [WALL_X * 2, bottomWallHeight] },
+    { key: 'left', position: [-(windowHalfW + sideWallWidth / 2), TARGET_WINDOW.centerY, BACK_Z], size: [sideWallWidth, TARGET_WINDOW.height] },
+    { key: 'right', position: [windowHalfW + sideWallWidth / 2, TARGET_WINDOW.centerY, BACK_Z], size: [sideWallWidth, TARGET_WINDOW.height] },
+  ].filter((piece) => piece.size[0] > 0 && piece.size[1] > 0)
+  const frame = TARGET_WINDOW.frame
+  const framePieces = [
+    { key: 'frame-top', position: [0, windowTop + frame / 2, BACK_Z + 0.018], size: [TARGET_WINDOW.width + frame * 2, frame] },
+    { key: 'frame-bottom', position: [0, windowBottom - frame / 2, BACK_Z + 0.018], size: [TARGET_WINDOW.width + frame * 2, frame] },
+    { key: 'frame-left', position: [-(windowHalfW + frame / 2), TARGET_WINDOW.centerY, BACK_Z + 0.018], size: [frame, TARGET_WINDOW.height] },
+    { key: 'frame-right', position: [windowHalfW + frame / 2, TARGET_WINDOW.centerY, BACK_Z + 0.018], size: [frame, TARGET_WINDOW.height] },
+  ]
   const barW = ballRadius * 2.25
   const barH = ballRadius * 0.45
   const barY = ballRadius + 0.2
@@ -163,9 +201,9 @@ function Scene({
   const spheres = useRef([])
   const hpFills = useRef([])
   const barGroups = useRef([])
-  const arcs = useRef(Array.from(
+  const targets = useRef(Array.from(
     { length: NUM_BALLS_MAX },
-    (_, i) => makeArc(i % 2 === 0 ? 1 : -1, arcHeightCfg),
+    (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg),
   ))
   const hp = useRef(Array(NUM_BALLS_MAX).fill(1.0))
   const beep = useRef(Array.from({ length: NUM_BALLS_MAX }, () => ({ last: -1 })))
@@ -174,7 +212,7 @@ function Scene({
   const { camera, raycaster } = useThree()
 
   const resetBall = useCallback((idx) => {
-    arcs.current[idx] = { ...makeArc(null, arcHeightCfg), t: 0 }
+    targets.current[idx] = makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
     hp.current[idx] = 1.0
     beep.current[idx].last = -1
     firstContact.current[idx] = -1
@@ -185,7 +223,7 @@ function Scene({
       fill.position.x = 0
       fill.material.color.copy(GREEN)
     }
-  }, [arcHeightCfg])
+  }, [arcHeightCfg, ballRadius, numBalls])
 
   useFrame((_, delta) => {
     if (!active) return
@@ -193,19 +231,23 @@ function Scene({
     elapsed.current += delta
 
     for (let i = 0; i < numBalls; i++) {
-      const arc = arcs.current[i]
+      const target = targets.current[i]
       const group = groups.current[i]
       const barGroup = barGroups.current[i]
       if (!group) continue
 
-      arc.t += delta * arc.speed * speedMult
-      const pos = bezierPos(arc, Math.min(arc.t, 1))
-      if (arc.t >= 1 || (arc.t > 0.5 && Math.abs(pos.x) >= WALL_X)) {
-        resetBall(i)
-        continue
+      const bounds = getWindowBounds(ballRadius)
+      target.x += delta * target.speed * speedMult * target.dir
+
+      if (target.x >= bounds.maxX) {
+        target.x = bounds.maxX
+        target.dir = -1
+      } else if (target.x <= bounds.minX) {
+        target.x = bounds.minX
+        target.dir = 1
       }
 
-      group.position.copy(pos)
+      group.position.set(target.x, target.y, TARGET_WINDOW.targetZ)
       if (barGroup) barGroup.quaternion.copy(camera.quaternion)
     }
 
@@ -278,10 +320,22 @@ function Scene({
       <pointLight position={[-4.8, 2.7, -9]} intensity={room.rimIntensity} color={room.rimLight} distance={10} />
       <pointLight position={[4.8, 2.7, -9]} intensity={room.fillIntensity * 0.45} color={room.fillLight} distance={10} />
 
-      <mesh position={[0, 1.5, BACK_Z]}>
-        <planeGeometry args={[WALL_X * 2, CEIL_Y - FLOOR_Y]} />
-        <meshStandardMaterial color={room.backWall} roughness={0.88} metalness={0.04} />
+      {wallPieces.map((piece) => (
+        <mesh key={piece.key} position={piece.position}>
+          <planeGeometry args={piece.size} />
+          <meshStandardMaterial color={room.backWall} roughness={0.88} metalness={0.04} />
+        </mesh>
+      ))}
+      <mesh position={[0, TARGET_WINDOW.centerY, TARGET_WINDOW.insetZ]}>
+        <planeGeometry args={[TARGET_WINDOW.width, TARGET_WINDOW.height]} />
+        <meshStandardMaterial color={room.opening} roughness={0.95} metalness={0.02} />
       </mesh>
+      {framePieces.map((piece) => (
+        <mesh key={piece.key} position={piece.position}>
+          <planeGeometry args={piece.size} />
+          <meshStandardMaterial color={room.frame} roughness={0.82} metalness={0.08} />
+        </mesh>
+      ))}
       <mesh position={[-WALL_X, 1.5, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), CEIL_Y - FLOOR_Y]} />
         <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />
