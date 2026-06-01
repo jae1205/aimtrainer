@@ -4,7 +4,8 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
 import * as THREE from 'three'
 
-const CAMERA_CONFIG = { position: [0, 0, 0], fov: 75, near: 0.01, far: 1000 }
+const PLAYER_EYE_Y = 0.35
+const CAMERA_CONFIG = { position: [0, PLAYER_EYE_Y, 0], fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
@@ -65,7 +66,7 @@ const ROOM_THEME = {
     sideWall: '#CBD6DE',
     floor: '#CBD6DE',
     ceiling: '#E8F0F5',
-    opening: '#C5D5DF',
+    opening: '#F8FCFF',
     frame: '#A8BAC7',
     hpBorder: '#A8BAC7',
     hpTrack: '#D9E5EC',
@@ -287,7 +288,7 @@ function PlayerController({ sensitivityMultiplier = 1, dpi = 800, movementEnable
     moveVector.current.normalize().multiplyScalar(speed * delta)
     camera.position.add(moveVector.current)
     camera.position.x = Math.max(PLAYER_BOUNDS.minX, Math.min(PLAYER_BOUNDS.maxX, camera.position.x))
-    camera.position.y = 0
+    camera.position.y = PLAYER_EYE_Y
     camera.position.z = Math.max(PLAYER_BOUNDS.minZ, Math.min(PLAYER_BOUNDS.maxZ, camera.position.z))
   })
 
@@ -485,7 +486,9 @@ function Scene({
       ))}
       <mesh position={[0, TARGET_WINDOW.centerY, TARGET_WINDOW.insetZ]}>
         <planeGeometry args={[TARGET_WINDOW.width, TARGET_WINDOW.height]} />
-        <meshStandardMaterial color={room.opening} roughness={0.95} metalness={0.02} />
+        {theme === 'light'
+          ? <meshBasicMaterial color={room.opening} fog={false} toneMapped={false} />
+          : <meshStandardMaterial color={room.opening} roughness={0.95} metalness={0.02} />}
       </mesh>
       {framePieces.map((piece) => (
         <mesh key={piece.key} position={piece.position}>
