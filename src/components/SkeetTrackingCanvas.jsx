@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
+import GunViewModel from './GunViewModel'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
@@ -469,6 +470,7 @@ export default function SkeetTrackingCanvas({
   sensitivity,
   dpi,
   active,
+  viewModelActive,
   onDestroy,
   ballSpeed,
   ballHP,
@@ -481,10 +483,6 @@ export default function SkeetTrackingCanvas({
   onViewModelReady,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
-
-  useEffect(() => {
-    onViewModelReady?.()
-  }, [onViewModelReady])
 
   return (
     <Canvas
@@ -509,6 +507,9 @@ export default function SkeetTrackingCanvas({
         arcHeightCfg={arcHeightCfg}
         statsRef={statsRef}
       />
+      <Suspense fallback={null}>
+        <GunViewModel active={viewModelActive} onReady={onViewModelReady} />
+      </Suspense>
     </Canvas>
   )
 }
