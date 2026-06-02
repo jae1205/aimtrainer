@@ -19,6 +19,7 @@ const BACK_Z = -12
 const SEAM_OVERLAP = 0.36
 const SEAM_COVE_HEIGHT = 0.42
 const TARGET_TRAVEL_MARGIN = 0.95
+const TARGET_STAGGER = 0.22
 const PLAYER_BOUNDS = {
   minX: -4.6,
   maxX: 4.6,
@@ -95,7 +96,7 @@ function getWindowBounds(ballRadius) {
 
 function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   const bounds = getWindowBounds(ballRadius)
-  const dir = Math.random() > 0.5 ? 1 : -1
+  const dir = idx % 2 === 0 ? 1 : -1
   const travelEdge = TARGET_WINDOW.width / 2 + TARGET_TRAVEL_MARGIN + ballRadius * 1.4
   const fullHeight = bounds.maxY - bounds.minY
   const arcHeight = fullHeight * (heightCfg?.arc ?? 0.2) * (0.9 + Math.random() * 0.22)
@@ -111,21 +112,23 @@ function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   const endY = Math.max(bounds.minY, startY - drop)
 
   return {
-    t: 0,
+    t: -idx * TARGET_STAGGER,
     startX: dir > 0 ? -travelEdge : travelEdge,
     endX: dir > 0 ? travelEdge : -travelEdge,
     startY,
     endY,
     arcHeight,
-    speed: 0.34 + Math.random() * 0.1,
+    gravity: heightCfg?.gravity ?? 1,
+    speed: 0.38 + idx * 0.025 + Math.random() * 0.04,
   }
 }
 
 function getWindowTargetPosition(target, ballRadius) {
   const bounds = getWindowBounds(ballRadius)
-  const t = Math.min(target.t, 1)
+  const t = Math.max(0, Math.min(target.t, 1))
   const x = target.startX + (target.endX - target.startX) * t
-  const linearY = target.startY + (target.endY - target.startY) * t
+  const fallT = 1 - Math.pow(1 - t, target.gravity ?? 1)
+  const linearY = target.startY + (target.endY - target.startY) * fallT
   const y = linearY + target.arcHeight * 4 * t * (1 - t)
 
   return [

@@ -11,36 +11,10 @@ const CANVAS_MOUNT_DELAY = 300
 const PREPARE_FALLBACK_DELAY = 5000
 const BALL_SPEED_FIXED = 1
 const BALL_HP_FIXED = 0.49
-
-const BALL_COLORS = [
-  { key: 'red', labelKr: '빨강', labelEn: 'Red', value: '#ff4655' },
-  { key: 'green', labelKr: '초록', labelEn: 'Green', value: '#22c55e' },
-  { key: 'blue', labelKr: '파랑', labelEn: 'Blue', value: '#3b82f6' },
-]
-
-const BALL_SIZE_OPTIONS = [
-  { key: 'small', labelKr: '작게', labelEn: 'Small', value: 0.1 },
-  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 0.15 },
-  { key: 'large', labelKr: '크게', labelEn: 'Large', value: 0.2 },
-]
-
-const BALL_COUNT_OPTIONS = [
-  { key: '2', labelKr: '2개', labelEn: '2', value: 2 },
-  { key: '4', labelKr: '4개', labelEn: '4', value: 4 },
-  { key: '6', labelKr: '6개', labelEn: '6', value: 6 },
-]
-
-const ARC_HEIGHT_CFG = {
-  low: { spread: 0.7, arc: 0.12, drop: 0.3 },
-  medium: { spread: 0.85, arc: 0.2, drop: 0.45 },
-  high: { spread: 1.0, arc: 0.28, drop: 0.58 },
-}
-
-const ARC_HEIGHT_OPTIONS = [
-  { key: 'low', labelKr: '낮음', labelEn: 'Low', value: 'low' },
-  { key: 'medium', labelKr: '중간', labelEn: 'Medium', value: 'medium' },
-  { key: 'high', labelKr: '높음', labelEn: 'High', value: 'high' },
-]
+const BALL_COLOR_FIXED = '#ff4655'
+const BALL_SIZE_FIXED = 0.1
+const BALL_COUNT_FIXED = 3
+const ARC_HEIGHT_FIXED = { spread: 0.9, arc: 0.2, drop: 0.58, gravity: 1.65 }
 
 function readSetup() {
   try {
@@ -57,37 +31,6 @@ function getSensLevel(sens, lang) {
   if (sens <= 0.35) return { label: lang === 'kr' ? '중감도' : 'Medium', color: '#4ADE80' }
   if (sens <= 0.40) return { label: lang === 'kr' ? '중고감도' : 'Med-High', color: '#FBBF24' }
   return { label: lang === 'kr' ? '고감도' : 'High', color: '#F97316' }
-}
-
-function OptionGrid({ label, options, current, setValue, colorMode, theme, lang, sub }) {
-  return (
-    <div>
-      <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1.5 ${sub}`}>{label}</p>
-      <div className="grid grid-cols-3 gap-1.5">
-        {options.map((opt) => {
-          const active = current === opt.value
-          const bg = active ? (colorMode ? opt.value : '#22D3EE') : 'transparent'
-          const border = active ? (colorMode ? opt.value : '#22D3EE') : (theme === 'light' ? '#CBD5E1' : '#334155')
-          const color = active ? '#fff' : (theme === 'light' ? '#151A21' : '#F4F7FA')
-
-          return (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setValue(opt.value)
-              }}
-              className="py-1.5 rounded-lg text-[10px] font-bold border transition-all"
-              style={{ background: bg, borderColor: border, color }}
-            >
-              {lang === 'kr' ? opt.labelKr : opt.labelEn}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
 }
 
 export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChange }) {
@@ -110,13 +53,8 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const [localSens, setLocalSens] = useState(sensitivity)
   const [sensEditing, setSensEditing] = useState(false)
   const [sensInput, setSensInput] = useState('')
-  const [ballSize, setBallSize] = useState(0.15)
-  const [numBalls, setNumBalls] = useState(4)
-  const [arcHeight, setArcHeight] = useState('medium')
-  const [ballColor, setBallColor] = useState(BALL_COLORS[0].value)
   const [localDpi, setLocalDpi] = useState(() => readSetup().dpi || 800)
 
-  const arcHeightCfg = ARC_HEIGHT_CFG[arcHeight]
   const eDPI = Math.round(localDpi * localSens * 100) / 100
   const cm360 = eDPI > 0 ? 13063 / eDPI : 0
   const sensLevelInfo = getSensLevel(localSens, lang)
@@ -492,15 +430,6 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               </button>
             </div>
 
-            <div className={`p-4 rounded-3xl border shadow-2xl w-full lg:w-56 shrink-0 flex flex-col gap-3 ${panelCls}`}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">
-                {lang === 'kr' ? '커스텀 설정' : 'Custom'}
-              </p>
-              <OptionGrid label={lang === 'kr' ? '공 색상' : 'Ball Color'} options={BALL_COLORS} current={ballColor} setValue={setBallColor} colorMode theme={theme} lang={lang} sub={sub} />
-              <OptionGrid label={lang === 'kr' ? '공 크기' : 'Ball Size'} options={BALL_SIZE_OPTIONS} current={ballSize} setValue={setBallSize} theme={theme} lang={lang} sub={sub} />
-              <OptionGrid label={lang === 'kr' ? '공 수' : 'Ball Count'} options={BALL_COUNT_OPTIONS} current={numBalls} setValue={setNumBalls} theme={theme} lang={lang} sub={sub} />
-              <OptionGrid label={lang === 'kr' ? '포물선 높이' : 'Arc Height'} options={ARC_HEIGHT_OPTIONS} current={arcHeight} setValue={setArcHeight} theme={theme} lang={lang} sub={sub} />
-            </div>
           </div>
         </div>
       )}
@@ -562,10 +491,10 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             onDestroy={() => setScore((current) => current + 1)}
             ballSpeed={BALL_SPEED_FIXED}
             ballHP={BALL_HP_FIXED}
-            ballSize={ballSize}
-            ballColor={ballColor}
-            numBalls={numBalls}
-            arcHeightCfg={arcHeightCfg}
+            ballSize={BALL_SIZE_FIXED}
+            ballColor={BALL_COLOR_FIXED}
+            numBalls={BALL_COUNT_FIXED}
+            arcHeightCfg={ARC_HEIGHT_FIXED}
             statsRef={statsRef}
             onCanvasReady={() => setCanvasReady(true)}
             onViewModelReady={() => setViewModelReady(true)}
