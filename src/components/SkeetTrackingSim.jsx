@@ -276,7 +276,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
           theme === 'light' ? 'bg-[#EAF3F7]/68' : 'bg-black/60'
         }`}>
           <div className="flex flex-col lg:flex-row items-stretch gap-4">
-            <div className={`p-4 rounded-3xl border shadow-2xl w-full lg:w-56 shrink-0 flex flex-col gap-3 ${panelCls}`}>
+            <div className={`p-4 rounded-3xl border shadow-2xl w-full lg:w-56 shrink-0 flex flex-col gap-3 order-2 ${panelCls}`}>
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#22D3EE]">
                 {lang === 'kr' ? '감도 설정' : 'Sensitivity'}
               </p>
@@ -409,7 +409,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               </div>
             </div>
 
-            <div className={`text-center p-6 rounded-3xl border shadow-2xl shrink-0 flex flex-col justify-center ${panelCls}`} style={{ width: 360 }}>
+            <div className={`text-center p-6 rounded-3xl border shadow-2xl shrink-0 flex flex-col justify-center order-1 ${panelCls}`} style={{ width: 360 }}>
               <p className="text-xs font-semibold uppercase tracking-widest text-[#22D3EE] mb-2">SKEET TRACKING</p>
               <h2 className="text-3xl font-black mb-2.5 text-[#22D3EE]">
                 {lang === 'kr' ? '스키트 트래킹' : 'Skeet Tracking'}
