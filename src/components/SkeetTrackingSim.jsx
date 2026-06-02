@@ -218,21 +218,24 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
     >
       {completed && finalStats && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-          <div className={`w-full max-w-2xl overflow-hidden rounded-3xl border shadow-2xl ${panelCls}`}>
-            <div className="px-8 pt-7 pb-5 text-center border-b" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
-              <p className="text-base font-bold uppercase tracking-widest text-[#22D3EE] mb-3">
+          <div
+            className={`aspect-square overflow-hidden rounded-3xl border shadow-2xl flex flex-col ${panelCls}`}
+            style={{ width: 'min(86vw, 420px, calc(100vh - 96px))' }}
+          >
+            <div className="px-5 pt-5 pb-3 text-center border-b shrink-0" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#22D3EE] mb-2">
                 {lang === 'kr' ? '스키트 트래킹 결과' : 'Skeet Tracking Result'}
               </p>
-              <p className={`text-xs font-semibold uppercase tracking-widest mb-2 ${sub}`}>
+              <p className={`text-[9px] font-semibold uppercase tracking-widest mb-1.5 ${sub}`}>
                 {lang === 'kr' ? '총 점수' : 'Total Score'}
               </p>
-              <p className="text-7xl font-black text-[#22D3EE] tabular-nums leading-none">
+              <p className="text-5xl font-black text-[#22D3EE] tabular-nums leading-none">
                 {finalStats.totalScore.toLocaleString()}
               </p>
-              <p className={`text-sm mt-2 font-semibold ${sub}`}>{lang === 'kr' ? '점' : 'pts'}</p>
+              <p className={`text-xs mt-1.5 font-semibold ${sub}`}>{lang === 'kr' ? '점' : 'pts'}</p>
             </div>
 
-            <div className="grid grid-cols-2 border-b" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
+            <div className="grid grid-cols-2 border-b flex-1 min-h-0" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
               {[
                 { labelKr: '킬 수', labelEn: 'Kill Count', value: String(finalStats.kills), unit: 'kill' },
                 { labelKr: '정확도', labelEn: 'Accuracy', value: finalStats.accuracy.toFixed(1), unit: '%' },
@@ -246,23 +249,23 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               ].map(({ labelKr, labelEn, value, unit }) => (
                 <div
                   key={labelEn}
-                  className="flex flex-col items-center justify-center py-5 gap-1 border-t odd:border-r first:border-t-0"
+                  className="flex flex-col items-center justify-center px-2 py-2 gap-0.5 border-t odd:border-r first:border-t-0"
                   style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}
                 >
-                  <p className={`text-[10px] font-semibold uppercase tracking-widest ${sub}`}>
+                  <p className={`text-[9px] font-semibold uppercase tracking-widest ${sub}`}>
                     {lang === 'kr' ? labelKr : labelEn}
                   </p>
-                  <p className="text-3xl font-black text-[#22D3EE] tabular-nums leading-none">{value}</p>
-                  <p className={`text-[11px] font-medium ${sub}`}>{unit}</p>
+                  <p className="text-2xl font-black text-[#22D3EE] tabular-nums leading-none">{value}</p>
+                  <p className={`text-[10px] font-medium ${sub}`}>{unit}</p>
                 </div>
               ))}
             </div>
 
-            <div className="px-8 py-4 flex justify-center">
+            <div className="px-5 py-3 flex justify-center shrink-0">
               <button
                 type="button"
                 onClick={() => navigate('/drills')}
-                className="px-8 py-2 rounded-xl bg-[#22D3EE] text-[#071013] text-sm font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
+                className="px-5 py-1.5 rounded-lg bg-[#22D3EE] text-[#071013] text-xs font-bold hover:bg-[#22D3EE]/80 transition-all hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
               >
                 {lang === 'kr' ? '목록으로' : 'Back to List'}
               </button>
