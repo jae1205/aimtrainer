@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
-import { playSkeetHit } from '../utils/sounds'
+import { getSoundVolume } from '../utils/sounds'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
@@ -156,6 +156,29 @@ function isTargetInOpening(position, ballRadius) {
   )
 }
 
+let audioCtx = null
+
+function playBeep(damagePct) {
+  const vol = getSoundVolume()
+  if (vol === 0) return
+
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    if (audioCtx.state === 'suspended') audioCtx.resume()
+
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    osc.connect(gain)
+    gain.connect(audioCtx.destination)
+    osc.type = 'sine'
+    osc.frequency.value = 700 + damagePct * 900
+    gain.gain.setValueAtTime(0.2 * vol, audioCtx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06)
+    osc.start(audioCtx.currentTime)
+    osc.stop(audioCtx.currentTime + 0.06)
+  } catch {}
+}
+
 function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
   const { camera } = useThree()
   const rotation = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
@@ -243,7 +266,6 @@ function Scene({
     (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg),
   ))
   const hp = useRef(Array(NUM_BALLS_MAX).fill(1.0))
-  const beep = useRef(Array.from({ length: NUM_BALLS_MAX }, () => ({ last: -1 })))
   const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
   const elapsed = useRef(0)
   const { camera, raycaster } = useThree()
@@ -251,7 +273,6 @@ function Scene({
   const resetBall = useCallback((idx) => {
     targets.current[idx] = makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
     hp.current[idx] = 1.0
-    beep.current[idx].last = -1
     firstContact.current[idx] = -1
 
     const fill = hpFills.current[idx]
@@ -315,10 +336,7 @@ function Scene({
       const fill = hpFills.current[i]
       if (!fill) continue
 
-      if (!hits.has(i)) {
-        beep.current[i].last = -1
-        continue
-      }
+      if (!hits.has(i)) continue
 
       if (firstContact.current[i] === -1) {
         firstContact.current[i] = elapsed.current
@@ -331,19 +349,13 @@ function Scene({
       const actualDrain = prevHp - h
       if (statsRef) statsRef.current.totalDamage += actualDrain
 
-      const dmgPct = 1 - h
       fill.scale.x = Math.max(0.001, h)
       fill.position.x = barW * (h - 1) / 2
       fill.material.color.copy(hpColor(h))
 
-      const interval = Math.max(0.12, 0.55 - dmgPct * 0.43)
-      const b = beep.current[i]
-      if (b.last < 0 || dmgPct - b.last >= interval) {
-        playSkeetHit(dmgPct)
-        b.last = dmgPct
-      }
-
       if (h <= 0) {
+        playBeep(1)
+
         if (statsRef && firstContact.current[i] >= 0) {
           const ttk = elapsed.current - firstContact.current[i]
           if (ttk > 0) statsRef.current.ttks.push(ttk)
