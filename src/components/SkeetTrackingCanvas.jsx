@@ -5,7 +5,9 @@ import { getSoundVolume } from '../utils/sounds'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
-const CAMERA_CONFIG = { position: [0, PLAYER_EYE_Y, 0], fov: 75, near: 0.01, far: 1000 }
+const PLAYER_START_Z = -3
+const PLAYER_START_POSITION = [0, PLAYER_EYE_Y, PLAYER_START_Z]
+const CAMERA_CONFIG = { position: PLAYER_START_POSITION, fov: 75, near: 0.01, far: 1000 }
 const PITCH_LIMIT = Math.PI / 2.2
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
@@ -20,12 +22,6 @@ const SEAM_OVERLAP = 0.36
 const SEAM_COVE_HEIGHT = 0.42
 const TARGET_TRAVEL_MARGIN = 0.95
 const TARGET_STAGGER = 0.16
-const PLAYER_BOUNDS = {
-  minX: -4.6,
-  maxX: 4.6,
-  minZ: BACK_Z + 2.2,
-  maxZ: -0.15,
-}
 const TARGET_WINDOW = {
   width: 5.2,
   height: 3.1,
@@ -183,19 +179,9 @@ function playBeep(damagePct) {
   } catch {}
 }
 
-function PlayerController({ sensitivityMultiplier = 1, dpi = 800, movementEnabled = false }) {
+function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
   const { camera } = useThree()
   const rotation = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
-  const keys = useRef({
-    forward: false,
-    backward: false,
-    left: false,
-    right: false,
-    sprint: false,
-  })
-  const moveForward = useRef(new THREE.Vector3())
-  const moveRight = useRef(new THREE.Vector3())
-  const moveVector = useRef(new THREE.Vector3())
 
   const handleMouseMove = useCallback((e) => {
     if (!document.pointerLockElement) return
@@ -209,91 +195,13 @@ function PlayerController({ sensitivityMultiplier = 1, dpi = 800, movementEnable
 
   useEffect(() => {
     camera.rotation.order = 'YXZ'
+    camera.position.set(...PLAYER_START_POSITION)
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [camera, handleMouseMove])
 
-  useEffect(() => {
-    const clearKeys = () => {
-      keys.current.forward = false
-      keys.current.backward = false
-      keys.current.left = false
-      keys.current.right = false
-      keys.current.sprint = false
-    }
-
-    const setKey = (event, pressed) => {
-      switch (event.code) {
-        case 'KeyW':
-        case 'ArrowUp':
-          keys.current.forward = pressed
-          break
-        case 'KeyS':
-        case 'ArrowDown':
-          keys.current.backward = pressed
-          break
-        case 'KeyA':
-        case 'ArrowLeft':
-          keys.current.left = pressed
-          break
-        case 'KeyD':
-        case 'ArrowRight':
-          keys.current.right = pressed
-          break
-        case 'ShiftLeft':
-        case 'ShiftRight':
-          keys.current.sprint = pressed
-          break
-        default:
-          return
-      }
-
-      if (document.pointerLockElement) event.preventDefault()
-    }
-
-    const handleKeyDown = (event) => setKey(event, true)
-    const handleKeyUp = (event) => setKey(event, false)
-    const handlePointerLockChange = () => {
-      if (!document.pointerLockElement) clearKeys()
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    window.addEventListener('blur', clearKeys)
-    document.addEventListener('pointerlockchange', handlePointerLockChange)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-      window.removeEventListener('blur', clearKeys)
-      document.removeEventListener('pointerlockchange', handlePointerLockChange)
-    }
-  }, [])
-
-  useFrame((_, delta) => {
-    if (!movementEnabled || !document.pointerLockElement) return
-
-    moveForward.current.set(0, 0, -1).applyQuaternion(camera.quaternion)
-    moveForward.current.y = 0
-    moveForward.current.normalize()
-
-    moveRight.current.set(1, 0, 0).applyQuaternion(camera.quaternion)
-    moveRight.current.y = 0
-    moveRight.current.normalize()
-
-    moveVector.current.set(0, 0, 0)
-    if (keys.current.forward) moveVector.current.add(moveForward.current)
-    if (keys.current.backward) moveVector.current.sub(moveForward.current)
-    if (keys.current.right) moveVector.current.add(moveRight.current)
-    if (keys.current.left) moveVector.current.sub(moveRight.current)
-
-    if (moveVector.current.lengthSq() === 0) return
-
-    const speed = keys.current.sprint ? 3.3 : 2.15
-    moveVector.current.normalize().multiplyScalar(speed * delta)
-    camera.position.add(moveVector.current)
-    camera.position.x = Math.max(PLAYER_BOUNDS.minX, Math.min(PLAYER_BOUNDS.maxX, camera.position.x))
-    camera.position.y = PLAYER_EYE_Y
-    camera.position.z = Math.max(PLAYER_BOUNDS.minZ, Math.min(PLAYER_BOUNDS.maxZ, camera.position.z))
+  useFrame(() => {
+    camera.position.set(...PLAYER_START_POSITION)
   })
 
   return null
@@ -472,7 +380,7 @@ function Scene({
 
   return (
     <>
-      <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} movementEnabled={active} />
+      <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
       <color attach="background" args={[room.background]} />
       <fog attach="fog" args={[room.fog, room.fogNear, room.fogFar]} />
       <ambientLight intensity={room.ambient} />
