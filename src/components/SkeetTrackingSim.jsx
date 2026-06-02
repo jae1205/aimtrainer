@@ -13,7 +13,7 @@ const BALL_SPEED_FIXED = 1
 const BALL_HP_FIXED = 0.49
 const BALL_COLOR_FIXED = '#ff4655'
 const BALL_SIZE_FIXED = 0.1
-const BALL_COUNT_FIXED = 6
+const BALL_COUNT_FIXED = 4
 const ARC_HEIGHT_FIXED = { spread: 0.9, arc: 0.3, drop: 0.58, gravity: 1.25 }
 
 function readSetup() {
