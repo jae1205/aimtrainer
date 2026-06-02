@@ -100,17 +100,18 @@ function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   const travelEdge = TARGET_WINDOW.width / 2 + TARGET_TRAVEL_MARGIN + ballRadius * 1.4
   const fullHeight = bounds.maxY - bounds.minY
   const arcScale = isTopBand ? 1 : 0.78
-  const dropScale = isTopBand ? 0.55 : 0.3
+  const dropScale = isTopBand ? 0.34 : 0.24
   const arcHeight = fullHeight * (heightCfg?.arc ?? 0.2) * arcScale * (0.92 + Math.random() * 0.16)
   const drop = fullHeight * (heightCfg?.drop ?? 0.45) * dropScale * (0.9 + Math.random() * 0.18)
-  const rowMin = bounds.minY + fullHeight * (isTopBand ? 0.48 : 0.14)
-  const rowMax = bounds.minY + fullHeight * (isTopBand ? 0.68 : 0.34)
-  const startMin = bounds.minY + drop + ballRadius * 0.25
+  const rowMin = bounds.minY + fullHeight * (isTopBand ? 0.46 : 0.12)
+  const rowMax = bounds.minY + fullHeight * (isTopBand ? 0.62 : 0.34)
+  const startMin = bounds.minY + drop * 0.45 + ballRadius * 0.25
   const startMax = bounds.maxY - arcHeight - ballRadius * 0.25
   const jitter = (rowMax - rowMin) * 0.14 * (Math.random() - 0.5)
   const laneY = rowMin + (rowMax - rowMin) * laneT + jitter
   const startY = Math.max(startMin, Math.min(startMax, laneY))
   const endY = Math.max(bounds.minY, startY - drop)
+  const peakY = Math.min(bounds.maxY, startY + arcHeight)
   const delay = laneIdx * TARGET_STAGGER + (isTopBand ? 0 : TARGET_STAGGER * 0.5) + Math.random() * 0.08
 
   return {
@@ -118,9 +119,8 @@ function makeWindowTarget(idx, total, ballRadius, heightCfg) {
     startX: dir > 0 ? -travelEdge : travelEdge,
     endX: dir > 0 ? travelEdge : -travelEdge,
     startY,
+    peakY,
     endY,
-    arcHeight,
-    gravity: heightCfg?.gravity ?? 1,
     speed: 0.36 + laneIdx * 0.02 + Math.random() * 0.06,
   }
 }
@@ -129,9 +129,8 @@ function getWindowTargetPosition(target, ballRadius) {
   const bounds = getWindowBounds(ballRadius)
   const t = Math.max(0, Math.min(target.t, 1))
   const x = target.startX + (target.endX - target.startX) * t
-  const fallT = 1 - Math.pow(1 - t, target.gravity ?? 1)
-  const linearY = target.startY + (target.endY - target.startY) * fallT
-  const y = linearY + target.arcHeight * 4 * t * (1 - t)
+  const invT = 1 - t
+  const y = invT * invT * target.startY + 2 * invT * t * target.peakY + t * t * target.endY
 
   return [
     x,
