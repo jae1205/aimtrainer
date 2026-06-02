@@ -256,7 +256,7 @@ function Scene({
   ]
   const barW = ballRadius * 2.25 * HP_BAR_SCALE
   const barH = ballRadius * 0.45 * HP_BAR_SCALE
-  const barY = ballRadius + 0.2
+  const barY = ballRadius + 0.1
   const groups = useRef([])
   const spheres = useRef([])
   const hpFills = useRef([])
