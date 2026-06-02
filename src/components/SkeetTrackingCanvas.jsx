@@ -326,7 +326,7 @@ function Scene({
         .filter((idx) => idx !== undefined),
     )
 
-    if (statsRef) {
+    if (statsRef && visibleSpheres.length > 0) {
       statsRef.current.activeFrames++
       if (hits.size > 0) statsRef.current.hitFrames++
     }

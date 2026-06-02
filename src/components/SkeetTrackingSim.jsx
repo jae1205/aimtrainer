@@ -224,7 +224,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
         labelKr: '파괴',
         labelEn: 'Kills',
         value: Math.round(killRating * 100),
-        detail: `${kills}/${SCORE_TARGETS.kills}`,
+        detail: String(kills),
       },
       {
         key: 'accuracy',
@@ -238,7 +238,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
         labelKr: '데미지',
         labelEn: 'Damage',
         value: Math.round(damageRating * 100),
-        detail: `${damage.toFixed(1)}/${SCORE_TARGETS.damage}`,
+        detail: damage.toFixed(1),
       },
       {
         key: 'ttk',
