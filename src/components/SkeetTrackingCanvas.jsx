@@ -19,7 +19,7 @@ const BACK_Z = -12
 const SEAM_OVERLAP = 0.36
 const SEAM_COVE_HEIGHT = 0.42
 const TARGET_TRAVEL_MARGIN = 0.95
-const TARGET_STAGGER = 0.22
+const TARGET_STAGGER = 0.16
 const PLAYER_BOUNDS = {
   minX: -4.6,
   maxX: 4.6,
@@ -96,30 +96,36 @@ function getWindowBounds(ballRadius) {
 
 function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   const bounds = getWindowBounds(ballRadius)
-  const dir = idx % 2 === 0 ? 1 : -1
+  const lanesPerBand = Math.max(1, Math.ceil(total / 2))
+  const isTopBand = idx < lanesPerBand
+  const laneIdx = idx % lanesPerBand
+  const laneT = lanesPerBand <= 1 ? 0.5 : laneIdx / (lanesPerBand - 1)
+  const dir = Math.random() > 0.5 ? 1 : -1
   const travelEdge = TARGET_WINDOW.width / 2 + TARGET_TRAVEL_MARGIN + ballRadius * 1.4
   const fullHeight = bounds.maxY - bounds.minY
-  const arcHeight = fullHeight * (heightCfg?.arc ?? 0.2) * (0.9 + Math.random() * 0.22)
-  const drop = fullHeight * (heightCfg?.drop ?? 0.45) * (0.85 + Math.random() * 0.25)
-  const startMin = bounds.minY + drop + ballRadius * 0.35
+  const arcScale = isTopBand ? 1 : 0.78
+  const dropScale = isTopBand ? 0.55 : 0.3
+  const arcHeight = fullHeight * (heightCfg?.arc ?? 0.2) * arcScale * (0.92 + Math.random() * 0.16)
+  const drop = fullHeight * (heightCfg?.drop ?? 0.45) * dropScale * (0.9 + Math.random() * 0.18)
+  const rowMin = bounds.minY + fullHeight * (isTopBand ? 0.48 : 0.14)
+  const rowMax = bounds.minY + fullHeight * (isTopBand ? 0.68 : 0.34)
+  const startMin = bounds.minY + drop + ballRadius * 0.25
   const startMax = bounds.maxY - arcHeight - ballRadius * 0.25
-  const laneT = total <= 1 ? 0.5 : (idx + 0.5) / total
-  const safeRange = Math.max(0.05, startMax - startMin)
-  const spread = safeRange * (heightCfg?.spread ?? 0.85)
-  const spreadStart = startMin + (safeRange - spread) / 2
-  const jitter = Math.min(0.1, spread / Math.max(3, total * 2)) * (Math.random() - 0.5)
-  const startY = Math.max(startMin, Math.min(startMax, spreadStart + laneT * spread + jitter))
+  const jitter = (rowMax - rowMin) * 0.14 * (Math.random() - 0.5)
+  const laneY = rowMin + (rowMax - rowMin) * laneT + jitter
+  const startY = Math.max(startMin, Math.min(startMax, laneY))
   const endY = Math.max(bounds.minY, startY - drop)
+  const delay = laneIdx * TARGET_STAGGER + (isTopBand ? 0 : TARGET_STAGGER * 0.5) + Math.random() * 0.08
 
   return {
-    t: -idx * TARGET_STAGGER,
+    t: -delay,
     startX: dir > 0 ? -travelEdge : travelEdge,
     endX: dir > 0 ? travelEdge : -travelEdge,
     startY,
     endY,
     arcHeight,
     gravity: heightCfg?.gravity ?? 1,
-    speed: 0.38 + idx * 0.025 + Math.random() * 0.04,
+    speed: 0.36 + laneIdx * 0.02 + Math.random() * 0.06,
   }
 }
 
