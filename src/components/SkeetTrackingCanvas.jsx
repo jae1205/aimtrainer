@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
-import { getSoundVolume } from '../utils/sounds'
+import { playSkeetHit } from '../utils/sounds'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
@@ -154,29 +154,6 @@ function isTargetInOpening(position, ballRadius) {
     y + ballRadius > minY &&
     y - ballRadius < maxY
   )
-}
-
-let audioCtx = null
-
-function playBeep(damagePct) {
-  const vol = getSoundVolume()
-  if (vol === 0) return
-
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    if (audioCtx.state === 'suspended') audioCtx.resume()
-
-    const osc = audioCtx.createOscillator()
-    const gain = audioCtx.createGain()
-    osc.connect(gain)
-    gain.connect(audioCtx.destination)
-    osc.type = 'sine'
-    osc.frequency.value = 700 + damagePct * 900
-    gain.gain.setValueAtTime(0.2 * vol, audioCtx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06)
-    osc.start(audioCtx.currentTime)
-    osc.stop(audioCtx.currentTime + 0.06)
-  } catch {}
 }
 
 function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
@@ -362,7 +339,7 @@ function Scene({
       const interval = Math.max(0.12, 0.55 - dmgPct * 0.43)
       const b = beep.current[i]
       if (b.last < 0 || dmgPct - b.last >= interval) {
-        playBeep(dmgPct)
+        playSkeetHit(dmgPct)
         b.last = dmgPct
       }
 

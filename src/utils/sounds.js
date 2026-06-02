@@ -1,4 +1,6 @@
 let audioCtx = null
+const SILENCE_GAIN = 0.0001
+const DEFAULT_ATTACK = 0.004
 
 // Master volume: 0.0 ~ 1.0, persisted in localStorage
 let masterVolume = (() => {
@@ -24,6 +26,37 @@ function getCtx() {
   return audioCtx
 }
 
+function playTone(ac, {
+  type = 'sine',
+  frequency,
+  endFrequency,
+  startTime,
+  duration,
+  peakGain,
+  attack = DEFAULT_ATTACK,
+}) {
+  const osc = ac.createOscillator()
+  const gain = ac.createGain()
+  const attackEnd = startTime + Math.min(attack, duration * 0.45)
+  const endTime = startTime + duration
+
+  osc.type = type
+  osc.frequency.setValueAtTime(Math.max(1, frequency), startTime)
+  if (endFrequency) {
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), endTime)
+  }
+
+  gain.gain.setValueAtTime(0, startTime)
+  gain.gain.linearRampToValueAtTime(peakGain * masterVolume, attackEnd)
+  gain.gain.exponentialRampToValueAtTime(SILENCE_GAIN, endTime)
+
+  osc.connect(gain)
+  gain.connect(ac.destination)
+  osc.onended = () => gain.disconnect()
+  osc.start(startTime)
+  osc.stop(endTime + 0.02)
+}
+
 /**
  * Valorant-style crisp hit tick — played on successful target hit
  */
@@ -31,31 +64,51 @@ export function playHit() {
   if (masterVolume === 0) return
   try {
     const ac = getCtx()
-    const now = ac.currentTime
+    const now = ac.currentTime + 0.002
 
-    const osc = ac.createOscillator()
-    const gain = ac.createGain()
-    osc.connect(gain)
-    gain.connect(ac.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(1400, now)
-    osc.frequency.exponentialRampToValueAtTime(700, now + 0.055)
-    gain.gain.setValueAtTime(0.45 * masterVolume, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055)
-    osc.start(now)
-    osc.stop(now + 0.055)
+    playTone(ac, {
+      frequency: 1380,
+      endFrequency: 780,
+      startTime: now,
+      duration: 0.06,
+      peakGain: 0.26,
+    })
+    playTone(ac, {
+      type: 'triangle',
+      frequency: 2600,
+      endFrequency: 1500,
+      startTime: now,
+      duration: 0.04,
+      peakGain: 0.055,
+      attack: 0.002,
+    })
+  } catch {}
+}
 
-    const osc2 = ac.createOscillator()
-    const gain2 = ac.createGain()
-    osc2.connect(gain2)
-    gain2.connect(ac.destination)
-    osc2.type = 'triangle'
-    osc2.frequency.setValueAtTime(2800, now)
-    osc2.frequency.exponentialRampToValueAtTime(1400, now + 0.04)
-    gain2.gain.setValueAtTime(0.15 * masterVolume, now)
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
-    osc2.start(now)
-    osc2.stop(now + 0.04)
+export function playSkeetHit(damagePct) {
+  if (masterVolume === 0) return
+  try {
+    const ac = getCtx()
+    const now = ac.currentTime + 0.002
+    const pct = Math.max(0, Math.min(1, damagePct))
+
+    playTone(ac, {
+      frequency: 860 + pct * 260,
+      endFrequency: 1160 + pct * 420,
+      startTime: now,
+      duration: 0.07,
+      peakGain: 0.115,
+      attack: 0.006,
+    })
+    playTone(ac, {
+      type: 'triangle',
+      frequency: 1850 + pct * 420,
+      endFrequency: 2350 + pct * 520,
+      startTime: now + 0.004,
+      duration: 0.045,
+      peakGain: 0.025,
+      attack: 0.004,
+    })
   } catch {}
 }
 
@@ -66,19 +119,16 @@ export function playMiss() {
   if (masterVolume === 0) return
   try {
     const ac = getCtx()
-    const now = ac.currentTime
+    const now = ac.currentTime + 0.002
 
-    const osc = ac.createOscillator()
-    const gain = ac.createGain()
-    osc.connect(gain)
-    gain.connect(ac.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(260, now)
-    osc.frequency.exponentialRampToValueAtTime(90, now + 0.14)
-    gain.gain.setValueAtTime(0.22 * masterVolume, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14)
-    osc.start(now)
-    osc.stop(now + 0.14)
+    playTone(ac, {
+      frequency: 260,
+      endFrequency: 95,
+      startTime: now,
+      duration: 0.14,
+      peakGain: 0.14,
+      attack: 0.006,
+    })
   } catch {}
 }
 
@@ -89,19 +139,16 @@ export function playConfirm() {
   if (masterVolume === 0) return
   try {
     const ac = getCtx()
-    const now = ac.currentTime
+    const now = ac.currentTime + 0.002
 
-    const osc = ac.createOscillator()
-    const gain = ac.createGain()
-    osc.connect(gain)
-    gain.connect(ac.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(480, now)
-    osc.frequency.exponentialRampToValueAtTime(780, now + 0.08)
-    gain.gain.setValueAtTime(0.3 * masterVolume, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1)
-    osc.start(now)
-    osc.stop(now + 0.1)
+    playTone(ac, {
+      frequency: 520,
+      endFrequency: 820,
+      startTime: now,
+      duration: 0.1,
+      peakGain: 0.2,
+      attack: 0.006,
+    })
   } catch {}
 }
 
@@ -112,21 +159,19 @@ export function playComplete() {
   if (masterVolume === 0) return
   try {
     const ac = getCtx()
-    const now = ac.currentTime
+    const now = ac.currentTime + 0.002
 
     const notes = [660, 880]
     notes.forEach((freq, i) => {
       const delay = i * 0.11
-      const osc = ac.createOscillator()
-      const gain = ac.createGain()
-      osc.connect(gain)
-      gain.connect(ac.destination)
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(freq, now + delay)
-      gain.gain.setValueAtTime(0.35 * masterVolume, now + delay)
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.1)
-      osc.start(now + delay)
-      osc.stop(now + delay + 0.12)
+      playTone(ac, {
+        frequency: freq,
+        endFrequency: freq * 1.16,
+        startTime: now + delay,
+        duration: 0.12,
+        peakGain: 0.24,
+        attack: 0.006,
+      })
     })
   } catch {}
 }
