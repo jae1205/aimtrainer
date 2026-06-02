@@ -258,18 +258,6 @@ function SetupModal({ theme, onClose, onConfirm }) {
   )
 }
 
-const FEATURE_ICONS = [
-  <svg key="analytics" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-  </svg>,
-  <svg key="feedback" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-  </svg>,
-  <svg key="free" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>,
-]
-
 function Home() {
   const navigate = useNavigate()
   const { t } = useLanguage()
@@ -368,79 +356,6 @@ function Home() {
                 <p className={`text-xs mt-0.5 ${dark ? 'text-[#64748B]' : 'text-[#64748B]'}`}>{stat.label}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="max-w-6xl mx-auto px-5">
-        <div className={`h-px ${dark ? 'bg-[#27313A]' : 'bg-[#D7E0E8]'}`} />
-      </div>
-
-      {/* Features */}
-      <section className={`py-20 ${dark ? 'bg-[#060A14]' : 'bg-white'}`}>
-        <div className="max-w-6xl mx-auto px-5">
-          <div className="mb-12 text-center">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-2 ${dark ? 'text-[#22D3EE]' : 'text-[#0891B2]'}`}>
-              {t.featuresLabel}
-            </p>
-            <h2 className={`text-3xl font-bold ${dark ? 'text-[#F1F5F9]' : 'text-[#0F172A]'}`}>
-              {t.featuresHeading}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[
-              { title: t.feat1Title, desc: t.feat1Desc },
-              { title: t.feat2Title, desc: t.feat2Desc },
-              { title: t.feat3Title, desc: t.feat3Desc },
-            ].map((feat, i) => (
-              <div
-                key={i}
-                className={`rounded-3xl border p-7 ${
-                  dark ? 'bg-[#111820] border-[#27313A]' : 'bg-[#F4F7F9] border-[#D7E0E8]'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${
-                  dark ? 'bg-[#22D3EE]/10 text-[#22D3EE]' : 'bg-[#22D3EE]/10 text-[#0891B2]'
-                }`}>
-                  {FEATURE_ICONS[i]}
-                </div>
-                <h3 className={`text-base font-bold mb-2 ${dark ? 'text-[#F1F5F9]' : 'text-[#0F172A]'}`}>{feat.title}</h3>
-                <p className={`text-sm leading-relaxed ${dark ? 'text-[#64748B]' : 'text-[#475569]'}`}>{feat.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
-      <section className={`py-20 ${dark ? 'bg-[#080B10]' : 'bg-[#F4F7F9]'}`}>
-        <div className="max-w-6xl mx-auto px-5">
-          <div className={`rounded-3xl p-12 text-center relative overflow-hidden ${
-            dark ? 'bg-[#111820] border border-[#27313A]' : 'bg-white border border-[#D7E0E8]'
-          }`}>
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: dark
-                  ? 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(34,211,238,0.06) 0%, transparent 70%)'
-                  : 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(34,211,238,0.08) 0%, transparent 70%)',
-              }}
-            />
-            <div className="relative">
-              <h2 className={`text-2xl font-bold mb-3 ${dark ? 'text-[#F1F5F9]' : 'text-[#0F172A]'}`}>
-                {t.ctaHeading}
-              </h2>
-              <p className={`text-sm mb-8 ${dark ? 'text-[#64748B]' : 'text-[#475569]'}`}>
-                {t.ctaDesc}
-              </p>
-              <div className="flex justify-center">
-                <AimButton href="/drills">
-                  {t.ctaBtn}
-                </AimButton>
-              </div>
-            </div>
           </div>
         </div>
       </section>
