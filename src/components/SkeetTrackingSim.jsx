@@ -50,13 +50,13 @@ function readSetup() {
   }
 }
 
-function getSensLevel(cm, lang) {
-  if (cm > 65) return { label: lang === 'kr' ? '초저감도' : 'Very Low', color: '#94A3B8' }
-  if (cm > 45) return { label: lang === 'kr' ? '저감도' : 'Low', color: '#38BDF8' }
-  if (cm > 30) return { label: lang === 'kr' ? '중간' : 'Medium', color: '#4ADE80' }
-  if (cm > 20) return { label: lang === 'kr' ? '중고감도' : 'Medium High', color: '#FBBF24' }
-  if (cm > 15) return { label: lang === 'kr' ? '고감도' : 'High', color: '#F97316' }
-  return { label: lang === 'kr' ? '초고감도' : 'Very High', color: '#F43F5E' }
+function getSensLevel(sens, lang) {
+  if (sens <= 0.10) return { label: lang === 'kr' ? '초저감도' : 'Ultra Low', color: '#94A3B8' }
+  if (sens <= 0.25) return { label: lang === 'kr' ? '저감도' : 'Low', color: '#38BDF8' }
+  if (sens <= 0.30) return { label: lang === 'kr' ? '중저감도' : 'Low-Med', color: '#22D3EE' }
+  if (sens <= 0.35) return { label: lang === 'kr' ? '중감도' : 'Medium', color: '#4ADE80' }
+  if (sens <= 0.40) return { label: lang === 'kr' ? '중고감도' : 'Med-High', color: '#FBBF24' }
+  return { label: lang === 'kr' ? '고감도' : 'High', color: '#F97316' }
 }
 
 function OptionGrid({ label, options, current, setValue, colorMode, theme, lang, sub }) {
@@ -119,7 +119,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
   const arcHeightCfg = ARC_HEIGHT_CFG[arcHeight]
   const eDPI = Math.round(localDpi * localSens * 100) / 100
   const cm360 = eDPI > 0 ? 13063 / eDPI : 0
-  const sensLevelInfo = getSensLevel(cm360, lang)
+  const sensLevelInfo = getSensLevel(localSens, lang)
 
   const bg = theme === 'dark' ? 'bg-[#080B10]' : 'bg-[#F4F7F9]'
   const panelCls = theme === 'light'

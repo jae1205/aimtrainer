@@ -115,13 +115,12 @@ function SetupModal({ theme, onClose, onConfirm }) {
   const dark = theme === 'dark'
 
   const sensLevel =
-    eDPI < 100  ? { label: t.sensLevels[0], color: 'text-slate-400' } :
-    eDPI < 184  ? { label: t.sensLevels[1], color: 'text-blue-400' } :
-    eDPI < 268  ? { label: t.sensLevels[2], color: 'text-cyan-400' } :
-    eDPI < 352  ? { label: t.sensLevels[3], color: 'text-green-400' } :
-    eDPI < 436  ? { label: t.sensLevels[4], color: 'text-yellow-400' } :
-    eDPI < 520  ? { label: t.sensLevels[5], color: 'text-orange-400' } :
-                  { label: t.sensLevels[6], color: 'text-cyan-400' }
+    validSens <= 0.10 ? { label: t.sensLevels[0], color: 'text-slate-400' } :
+    validSens <= 0.25 ? { label: t.sensLevels[1], color: 'text-blue-400' } :
+    validSens <= 0.30 ? { label: t.sensLevels[2], color: 'text-cyan-400' } :
+    validSens <= 0.35 ? { label: t.sensLevels[3], color: 'text-green-400' } :
+    validSens <= 0.40 ? { label: t.sensLevels[4], color: 'text-yellow-400' } :
+                        { label: t.sensLevels[5], color: 'text-orange-400' }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
