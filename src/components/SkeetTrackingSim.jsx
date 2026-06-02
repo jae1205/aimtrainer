@@ -15,6 +15,12 @@ const BALL_COLOR_FIXED = '#ff4655'
 const BALL_SIZE_FIXED = 0.1
 const BALL_COUNT_FIXED = 4
 const ARC_HEIGHT_FIXED = { spread: 0.9, arc: 0.38, drop: 0.62 }
+const SCORE_MAX = 1000
+const SCORE_TARGETS = { kills: 30, damage: 30, ttkFast: 0.45, ttkSlow: 2.2 }
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value))
+}
 
 function readSetup() {
   try {
@@ -198,13 +204,51 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
     const damage = st.totalDamage
     const spm = kills
     const avgTtk = st.ttks.length > 0 ? st.ttks.reduce((a, b) => a + b, 0) / st.ttks.length : 0
+    const killRating = clamp01(kills / SCORE_TARGETS.kills)
+    const accuracyRating = clamp01(accuracy / 100)
+    const damageRating = clamp01(damage / SCORE_TARGETS.damage)
+    const ttkRating = avgTtk > 0
+      ? clamp01((SCORE_TARGETS.ttkSlow - avgTtk) / (SCORE_TARGETS.ttkSlow - SCORE_TARGETS.ttkFast))
+      : 0
     const totalScore = Math.round(
-      kills * 500 +
-      accuracy * 20 +
-      (avgTtk > 0 ? (3 / avgTtk) * 100 : 0) +
-      damage * 80,
+      SCORE_MAX * (
+        killRating * 0.38 +
+        accuracyRating * 0.27 +
+        damageRating * 0.22 +
+        ttkRating * 0.13
+      ),
     )
-    const stats = { kills, kps, accuracy, damage, spm, avgTtk, totalScore }
+    const scoreGraph = [
+      {
+        key: 'kills',
+        labelKr: '파괴',
+        labelEn: 'Kills',
+        value: Math.round(killRating * 100),
+        detail: `${kills}/${SCORE_TARGETS.kills}`,
+      },
+      {
+        key: 'accuracy',
+        labelKr: '정확도',
+        labelEn: 'Accuracy',
+        value: Math.round(accuracyRating * 100),
+        detail: `${accuracy.toFixed(1)}%`,
+      },
+      {
+        key: 'damage',
+        labelKr: '데미지',
+        labelEn: 'Damage',
+        value: Math.round(damageRating * 100),
+        detail: `${damage.toFixed(1)}/${SCORE_TARGETS.damage}`,
+      },
+      {
+        key: 'ttk',
+        labelKr: '처치속도',
+        labelEn: 'TTK',
+        value: Math.round(ttkRating * 100),
+        detail: avgTtk > 0 ? `${avgTtk.toFixed(2)}s` : '-',
+      },
+    ]
+    const stats = { kills, kps, accuracy, damage, spm, avgTtk, totalScore, scoreGraph }
     setFinalStats(stats)
     onComplete?.(stats)
     setCompleted(true)
@@ -222,17 +266,36 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             className={`aspect-square overflow-hidden rounded-3xl border shadow-2xl flex flex-col ${panelCls}`}
             style={{ width: 'min(86vw, 420px, calc(100vh - 96px))' }}
           >
-            <div className="px-5 pt-5 pb-3 text-center border-b shrink-0" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
+            <div className="px-5 pt-4 pb-2.5 text-center border-b shrink-0" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
               <p className="text-xs font-bold uppercase tracking-widest text-[#22D3EE] mb-2">
                 {lang === 'kr' ? '스키트 트래킹 결과' : 'Skeet Tracking Result'}
               </p>
-              <p className={`text-[9px] font-semibold uppercase tracking-widest mb-1.5 ${sub}`}>
+              <p className={`text-[9px] font-semibold uppercase tracking-widest mb-1 ${sub}`}>
                 {lang === 'kr' ? '총 점수' : 'Total Score'}
               </p>
-              <p className="text-5xl font-black text-[#22D3EE] tabular-nums leading-none">
+              <p className="text-4xl font-black text-[#22D3EE] tabular-nums leading-none">
                 {finalStats.totalScore.toLocaleString()}
               </p>
-              <p className={`text-xs mt-1.5 font-semibold ${sub}`}>{lang === 'kr' ? '점' : 'pts'}</p>
+              <p className={`text-[11px] mt-1 font-semibold ${sub}`}>
+                {lang === 'kr' ? `1000점 만점` : `out of ${SCORE_MAX}`}
+              </p>
+            </div>
+
+            <div className="px-5 py-3 border-b shrink-0 space-y-2" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
+              {(finalStats.scoreGraph || []).map(({ key, labelKr, labelEn, value, detail }) => (
+                <div key={key} className="grid grid-cols-[56px_1fr_50px] items-center gap-2">
+                  <p className={`text-[9px] font-bold uppercase tracking-wide ${sub}`}>
+                    {lang === 'kr' ? labelKr : labelEn}
+                  </p>
+                  <div className={`h-2 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#D9E5EC]' : 'bg-[#1E293B]'}`}>
+                    <div
+                      className="h-full rounded-full bg-[#22D3EE] shadow-[0_0_10px_rgba(34,211,238,0.45)]"
+                      style={{ width: `${value}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] font-black text-[#22D3EE] tabular-nums text-right">{detail}</p>
+                </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-2 border-b flex-1 min-h-0" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
@@ -249,13 +312,13 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               ].map(({ labelKr, labelEn, value, unit }) => (
                 <div
                   key={labelEn}
-                  className="flex flex-col items-center justify-center px-2 py-2 gap-0.5 border-t odd:border-r first:border-t-0"
+                  className="flex flex-col items-center justify-center px-2 py-1.5 gap-0.5 border-t odd:border-r first:border-t-0"
                   style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}
                 >
                   <p className={`text-[9px] font-semibold uppercase tracking-widest ${sub}`}>
                     {lang === 'kr' ? labelKr : labelEn}
                   </p>
-                  <p className="text-2xl font-black text-[#22D3EE] tabular-nums leading-none">{value}</p>
+                  <p className="text-xl font-black text-[#22D3EE] tabular-nums leading-none">{value}</p>
                   <p className={`text-[10px] font-medium ${sub}`}>{unit}</p>
                 </div>
               ))}
