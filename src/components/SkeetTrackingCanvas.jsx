@@ -10,6 +10,7 @@ const PITCH_LIMIT = Math.PI / 2.2
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
+const HP_BAR_SCALE = 0.8
 
 const WALL_X = 6
 const FLOOR_Y = -2.0
@@ -336,8 +337,8 @@ function Scene({
     { key: 'frame-left', position: [-(windowHalfW + frame / 2), TARGET_WINDOW.centerY, BACK_Z + 0.018], size: [frame, TARGET_WINDOW.height] },
     { key: 'frame-right', position: [windowHalfW + frame / 2, TARGET_WINDOW.centerY, BACK_Z + 0.018], size: [frame, TARGET_WINDOW.height] },
   ]
-  const barW = ballRadius * 2.25
-  const barH = ballRadius * 0.45
+  const barW = ballRadius * 2.25 * HP_BAR_SCALE
+  const barH = ballRadius * 0.45 * HP_BAR_SCALE
   const barY = ballRadius + 0.2
   const groups = useRef([])
   const spheres = useRef([])

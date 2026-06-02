@@ -10,7 +10,7 @@ const DURATION = 60
 const CANVAS_MOUNT_DELAY = 300
 const PREPARE_FALLBACK_DELAY = 5000
 const BALL_SPEED_FIXED = 1
-const BALL_HP_FIXED = 0.7
+const BALL_HP_FIXED = 0.49
 
 const BALL_COLORS = [
   { key: 'red', labelKr: '빨강', labelEn: 'Red', value: '#ff4655' },
