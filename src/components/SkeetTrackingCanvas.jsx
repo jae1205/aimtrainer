@@ -271,9 +271,23 @@ function Scene({
   const { camera, raycaster } = useThree()
 
   const resetBall = useCallback((idx) => {
-    targets.current[idx] = makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
+    const nextTarget = makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
+    const nextPosition = getWindowTargetPosition(nextTarget, ballRadius)
+    const visibleInOpening = isTargetInOpening(nextPosition, ballRadius)
+    targets.current[idx] = nextTarget
     hp.current[idx] = 1.0
     firstContact.current[idx] = -1
+
+    const group = groups.current[idx]
+    if (group) {
+      group.position.set(...nextPosition)
+    }
+
+    const barGroup = barGroups.current[idx]
+    if (barGroup) {
+      barGroup.visible = visibleInOpening
+      barGroup.quaternion.copy(camera.quaternion)
+    }
 
     const fill = hpFills.current[idx]
     if (fill) {
@@ -281,7 +295,7 @@ function Scene({
       fill.position.x = 0
       fill.material.color.copy(GREEN)
     }
-  }, [arcHeightCfg, ballRadius, numBalls])
+  }, [arcHeightCfg, ballRadius, camera, numBalls])
 
   useFrame((_, delta) => {
     if (!active) return
@@ -349,10 +363,6 @@ function Scene({
       const actualDrain = prevHp - h
       if (statsRef) statsRef.current.totalDamage += actualDrain
 
-      fill.scale.x = Math.max(0.001, h)
-      fill.position.x = barW * (h - 1) / 2
-      fill.material.color.copy(hpColor(h))
-
       if (h <= 0) {
         playBeep(1)
 
@@ -363,7 +373,12 @@ function Scene({
 
         onDestroy()
         resetBall(i)
+        continue
       }
+
+      fill.scale.x = Math.max(0.001, h)
+      fill.position.x = barW * (h - 1) / 2
+      fill.material.color.copy(hpColor(h))
     }
   })
 
