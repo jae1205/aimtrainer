@@ -218,29 +218,7 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
         ttkRating * 0.13
       ),
     )
-    const scoreGraph = [
-      {
-        key: 'kills',
-        value: Math.round(killRating * 100),
-        detail: String(kills),
-      },
-      {
-        key: 'accuracy',
-        value: Math.round(accuracyRating * 100),
-        detail: `${accuracy.toFixed(1)}%`,
-      },
-      {
-        key: 'damage',
-        value: Math.round(damageRating * 100),
-        detail: damage.toFixed(1),
-      },
-      {
-        key: 'ttk',
-        value: Math.round(ttkRating * 100),
-        detail: avgTtk > 0 ? `${avgTtk.toFixed(2)}s` : '-',
-      },
-    ]
-    const stats = { kills, kps, accuracy, damage, spm, avgTtk, totalScore, scoreGraph }
+    const stats = { kills, kps, accuracy, damage, spm, avgTtk, totalScore }
     setFinalStats(stats)
     onComplete?.(stats)
     setCompleted(true)
@@ -271,20 +249,6 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
               <p className={`text-[11px] mt-1 font-semibold ${sub}`}>
                 {lang === 'kr' ? `1000점 만점` : `out of ${SCORE_MAX}`}
               </p>
-            </div>
-
-            <div className="px-5 py-3 border-b shrink-0 space-y-2" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
-              {(finalStats.scoreGraph || []).map(({ key, value, detail }) => (
-                <div key={key} className="grid grid-cols-[1fr_50px] items-center gap-2">
-                  <div className={`h-2 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#D9E5EC]' : 'bg-[#1E293B]'}`}>
-                    <div
-                      className="h-full rounded-full bg-[#22D3EE] shadow-[0_0_10px_rgba(34,211,238,0.45)]"
-                      style={{ width: `${value}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] font-black text-[#22D3EE] tabular-nums text-right">{detail}</p>
-                </div>
-              ))}
             </div>
 
             <div className="grid grid-cols-2 border-b flex-1 min-h-0" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
