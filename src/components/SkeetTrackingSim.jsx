@@ -221,29 +221,21 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
     const scoreGraph = [
       {
         key: 'kills',
-        labelKr: '파괴',
-        labelEn: 'Kills',
         value: Math.round(killRating * 100),
         detail: String(kills),
       },
       {
         key: 'accuracy',
-        labelKr: '정확도',
-        labelEn: 'Accuracy',
         value: Math.round(accuracyRating * 100),
         detail: `${accuracy.toFixed(1)}%`,
       },
       {
         key: 'damage',
-        labelKr: '데미지',
-        labelEn: 'Damage',
         value: Math.round(damageRating * 100),
         detail: damage.toFixed(1),
       },
       {
         key: 'ttk',
-        labelKr: '처치속도',
-        labelEn: 'TTK',
         value: Math.round(ttkRating * 100),
         detail: avgTtk > 0 ? `${avgTtk.toFixed(2)}s` : '-',
       },
@@ -282,11 +274,8 @@ export default function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dar
             </div>
 
             <div className="px-5 py-3 border-b shrink-0 space-y-2" style={{ borderColor: theme === 'dark' ? '#1E293B' : '#E2E8F0' }}>
-              {(finalStats.scoreGraph || []).map(({ key, labelKr, labelEn, value, detail }) => (
-                <div key={key} className="grid grid-cols-[56px_1fr_50px] items-center gap-2">
-                  <p className={`text-[9px] font-bold uppercase tracking-wide ${sub}`}>
-                    {lang === 'kr' ? labelKr : labelEn}
-                  </p>
+              {(finalStats.scoreGraph || []).map(({ key, value, detail }) => (
+                <div key={key} className="grid grid-cols-[1fr_50px] items-center gap-2">
                   <div className={`h-2 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#D9E5EC]' : 'bg-[#1E293B]'}`}>
                     <div
                       className="h-full rounded-full bg-[#22D3EE] shadow-[0_0_10px_rgba(34,211,238,0.45)]"
