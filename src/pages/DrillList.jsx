@@ -108,13 +108,13 @@ function DrillList() {
         <div className="max-w-2xl mx-auto px-5 py-16">
           <div className="mb-10">
             <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#22D3EE' }}>
-              {lang === 'kr' ? '훈련 모듈' : 'Drill Modules'}
+              {lang === 'kr' ? '솔로 사격' : 'Solo Shooting'}
             </p>
             <h1 className="text-3xl font-black mb-3" style={{ color: C.text }}>
-              {lang === 'kr' ? '훈련 목록' : 'Drill List'}
+              {lang === 'kr' ? '사격 모드' : 'Shooting Modes'}
             </h1>
             <p className="text-sm" style={{ color: C.muted }}>
-              {lang === 'kr' ? '원하는 훈련을 선택해 바로 시작하세요.' : 'Choose a drill and start training right away.'}
+              {lang === 'kr' ? '사격 모드를 선택하고 나만의 기록에 도전하세요.' : 'Choose a shooting mode and challenge your own score.'}
             </p>
           </div>
 

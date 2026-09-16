@@ -1,366 +1,115 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useLanguage } from '../contexts/LanguageContext'
+import './Home.css'
 
-function AimButton({ onClick, href, children, type = 'button', className = '' }) {
-  const [hovered, setHovered] = useState(false)
-  const Component = href ? 'a' : 'button'
-
-  return (
-    <Component
-      {...(href ? { href } : { type })}
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className={`relative inline-flex items-center justify-center ${className}`}
-      style={{
-        width: '240px',
-        height: '54px',
-        padding: '8px',
-        fontSize: '0.8rem',
-        fontWeight: 900,
-        color: hovered ? '#071013' : '#22D3EE',
-        textTransform: 'uppercase',
-        textDecoration: 'none',
-        boxShadow: 'none',
-        borderRadius: '14px',
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        letterSpacing: '0.05em',
-        transition: 'color 0.3s ease-out',
-      }}
-    >
-      <span style={{ position:'relative', width:'100%', height:'100%', display:'block', overflow:'hidden', borderRadius:'14px' }}>
-        <span style={{
-          boxSizing:'border-box', position:'absolute', zIndex:2,
-          width:'100%', height:'100%', left:0, top:0,
-          border: '1px solid #22D3EE', borderRadius: '14px',
-        }}>
-          <span style={{ content:'""', width:2, height:2, left:-1, top:-1, background:'#071013', position:'absolute', transition:'0.3s ease-out all' }} />
-        </span>
-        <span style={{
-          position:'absolute', left:'-5%', top:0,
-          background:'#22D3EE',
-          width: hovered ? '110%' : '0%',
-          height:'100%', zIndex:3,
-          transition:'0.3s ease-out all',
-          transform:'skewX(-10deg)',
-        }} />
-        <span style={{
-          zIndex:4, width:'100%', height:'100%',
-          position:'absolute', left:0, top:0,
-          display:'flex', alignItems:'center', justifyContent:'center',
-        }}>
-          {children}
-          <span style={{
-            position:'absolute', right:0, bottom:0,
-            width:4, height:4,
-            background: hovered ? '#071013' : 'transparent',
-            transition:'0.3s ease-out all', zIndex:5,
-          }} />
-        </span>
-      </span>
-    </Component>
-  )
+const COPY = {
+  kr: {
+    titles: ['사격장', '스코어 매치', '랭크 아레나'],
+    subtitles: ['60초 동안 최대한 많은 타겟을 처치하세요.', '각자의 타겟, 점수로 승부.', '같은 조건에서 증명하는 실력.'],
+    modes: ['솔로 사격', '스코어 매치', '랭크 아레나'],
+    play: '플레이', shop: '상점', soon: '준비 중', selected: '선택됨', modeLabel: '플레이 모드',
+    round: '60초 · 입장 가능', ready: '입장 가능',
+    setup: '감도 설정', setupDesc: '익숙한 마우스 설정으로 시작하세요.', dpi: '마우스 DPI', sens: '인게임 감도', close: '닫기', confirm: '준비 완료 · 입장',
+  },
+  en: {
+    titles: ['FIRING RANGE', 'SCORE MATCH', 'RANKED ARENA'],
+    subtitles: ['Eliminate as many targets as possible in 60 seconds.', 'Your own targets. A shared scoreboard.', 'Equal conditions. A rank earned by skill.'],
+    modes: ['Solo range', 'Score match', 'Ranked arena'],
+    play: 'PLAY', shop: 'STORE', soon: 'Coming soon', selected: 'Selected', modeLabel: 'Game mode',
+    round: '60 sec · Ready', ready: 'Ready to play',
+    setup: 'SENSITIVITY', setupDesc: 'Start with your familiar mouse settings.', dpi: 'MOUSE DPI', sens: 'IN-GAME SENSITIVITY', close: 'Close', confirm: 'Ready · Enter range',
+  },
 }
 
-const DPI_PRESETS = [400, 800, 1600, 3200]
+function readSetup() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('userSetup'))
+    return { dpi: Math.min(32000, Math.max(100, Number(saved?.dpi) || 800)), valorantSens: Math.min(10, Math.max(0.01, Number(saved?.valorantSens) || 0.5)) }
+  } catch { return { dpi: 800, valorantSens: 0.5 } }
+}
 
-function SetupModal({ theme, onClose, onConfirm }) {
+function SetupModal({ copy, onClose, onConfirm }) {
   const { t } = useLanguage()
-  const [dpi, setDpi] = useState(() => {
-    const saved = localStorage.getItem('userSetup')
-    return saved ? JSON.parse(saved).dpi : 800
-  })
-  const [inGameSens, setInGameSens] = useState(() => {
-    const saved = localStorage.getItem('userSetup')
-    return saved ? JSON.parse(saved).valorantSens : 0.5
-  })
-  const [sensInput, setSensInput] = useState(() => {
-    const saved = localStorage.getItem('userSetup')
-    return saved ? String(JSON.parse(saved).valorantSens) : '0.5'
-  })
-
-  const parsedSens = parseFloat(sensInput)
-  const validSens = isNaN(parsedSens) ? inGameSens : Math.max(0.01, Math.min(10, parsedSens))
-
-  const eDPI = Math.round(dpi * validSens)
-  const cmPer360 = (360 / (validSens * 0.07 * dpi / 2.54)).toFixed(1)
-
-  const handleSensChange = (val) => {
-    setSensInput(val)
-    const n = parseFloat(val)
-    if (!isNaN(n) && n >= 0.01) setInGameSens(Math.min(10, n))
-  }
-
-  const handleSensBlur = () => {
-    const clamped = Math.max(0.01, Math.min(10, isNaN(parsedSens) ? inGameSens : parsedSens))
-    setInGameSens(clamped)
-    setSensInput(String(clamped))
-  }
-
-  const stepSens = (delta) => {
-    const next = Math.max(0.01, Math.min(10, parseFloat((validSens + delta).toFixed(2))))
-    setInGameSens(next)
-    setSensInput(String(next))
-  }
-
-  const handleDpiInput = (val) => {
-    const n = parseInt(val)
-    if (!isNaN(n) && n > 0) setDpi(n)
-  }
-
-  const dark = theme === 'dark'
-
-  const sensLevel =
-    validSens <= 0.10 ? { label: t.sensLevels[0], color: 'text-slate-400' } :
-    validSens <= 0.25 ? { label: t.sensLevels[1], color: 'text-blue-400' } :
-    validSens <= 0.30 ? { label: t.sensLevels[2], color: 'text-cyan-400' } :
-    validSens <= 0.35 ? { label: t.sensLevels[3], color: 'text-green-400' } :
-    validSens <= 0.40 ? { label: t.sensLevels[4], color: 'text-yellow-400' } :
-                        { label: t.sensLevels[5], color: 'text-orange-400' }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className={`w-full max-w-md rounded-3xl border shadow-2xl p-7 ${
-        dark ? 'bg-[#111820] border-[#27313A] text-[#F4F7FA]' : 'bg-white border-[#D7E0E8] text-[#151A21]'
-      }`}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold">{t.setupTitle}</h2>
-            <p className={`text-sm mt-0.5 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>
-              {t.setupDesc}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-colors ${
-              dark ? 'text-[#8A94A3] hover:bg-[#19212B] hover:text-[#F4F7FA]' : 'text-[#64717F] hover:bg-[#EEF3F6] hover:text-[#151A21]'
-            }`}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* DPI */}
-        <div className="mb-5">
-          <label className={`block text-xs font-semibold uppercase tracking-widest mb-2.5 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>
-            {t.mouseDPI}
-          </label>
-          <div className="flex gap-2 mb-2.5">
-            {DPI_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => setDpi(preset)}
-                className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
-                  dpi === preset
-                    ? 'bg-[#22D3EE] border-[#22D3EE] text-[#071013]'
-                    : dark
-                    ? 'border-[#27313A] text-[#8A94A3] hover:border-[#22D3EE] hover:text-[#22D3EE]'
-                    : 'border-[#D7E0E8] text-[#64717F] hover:border-[#0891B2] hover:text-[#0891B2]'
-                }`}
-              >
-                {preset}
-              </button>
-            ))}
-          </div>
-          <input
-            type="number"
-            value={dpi}
-            onChange={(e) => handleDpiInput(e.target.value)}
-            className={`w-full rounded-xl border px-4 py-2.5 text-sm font-bold outline-none focus:border-[#22D3EE] transition-colors ${
-              dark
-                ? 'bg-[#080B10] border-[#27313A] text-[#F4F7FA] placeholder-[#8A94A3]'
-                : 'bg-[#EEF3F6] border-[#D7E0E8] text-[#151A21] placeholder-[#64717F]'
-            }`}
-            placeholder={t.customInput}
-            min="100"
-            max="32000"
-          />
-        </div>
-
-        {/* Sensitivity */}
-        <div className="mb-6">
-          <label className={`block text-xs font-semibold uppercase tracking-widest mb-2.5 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>
-            {t.inGameSens}
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => stepSens(-0.01)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border transition-all ${
-                dark
-                  ? 'border-[#27313A] text-[#8A94A3] hover:border-[#22D3EE] hover:text-[#22D3EE]'
-                  : 'border-[#D7E0E8] text-[#64717F] hover:border-[#0891B2] hover:text-[#0891B2]'
-              }`}
-            >
-              −
-            </button>
-            <input
-              type="number"
-              value={sensInput}
-              onChange={(e) => handleSensChange(e.target.value)}
-              onBlur={handleSensBlur}
-              className={`flex-1 rounded-xl border px-4 py-2.5 text-center text-xl font-black outline-none focus:border-[#22D3EE] transition-colors ${
-                dark
-                  ? 'bg-[#080B10] border-[#27313A] text-[#F4F7FA]'
-                  : 'bg-[#EEF3F6] border-[#D7E0E8] text-[#151A21]'
-              }`}
-              step="0.01"
-              min="0.01"
-              max="10"
-            />
-            <button
-              type="button"
-              onClick={() => stepSens(0.01)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border transition-all ${
-                dark
-                  ? 'border-[#27313A] text-[#8A94A3] hover:border-[#22D3EE] hover:text-[#22D3EE]'
-                  : 'border-[#D7E0E8] text-[#64717F] hover:border-[#0891B2] hover:text-[#0891B2]'
-              }`}
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Preview */}
-        <div className={`rounded-2xl p-4 mb-6 flex justify-around ${
-          dark ? 'bg-[#080B10]' : 'bg-[#EEF3F6]'
-        }`}>
-          <div className="text-center">
-            <p className={`text-xs mb-1 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>eDPI</p>
-            <p className="text-2xl font-black text-[#22D3EE]">{eDPI}</p>
-          </div>
-          <div className={`w-px ${dark ? 'bg-[#27313A]' : 'bg-[#D7E0E8]'}`} />
-          <div className="text-center">
-            <p className={`text-xs mb-1 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>cm/360°</p>
-            <p className={`text-2xl font-black ${dark ? 'text-[#F1F5F9]' : 'text-[#1A1F2E]'}`}>{cmPer360}</p>
-          </div>
-          <div className={`w-px ${dark ? 'bg-[#27313A]' : 'bg-[#D7E0E8]'}`} />
-          <div className="text-center">
-            <p className={`text-xs mb-1 ${dark ? 'text-[#64748B]' : 'text-[#7A7E85]'}`}>{t.level}</p>
-            <p className={`text-base font-bold ${sensLevel.color}`}>{sensLevel.label}</p>
-          </div>
-        </div>
-
-        <div className="flex justify-center mt-2">
-          <AimButton onClick={() => onConfirm({ dpi, valorantSens: validSens, eDPI })}>
-            {t.startTestBtn}
-          </AimButton>
-        </div>
+  const dialogRef = useRef(null)
+  const [setup, setSetup] = useState(readSetup)
+  const valid = setup.dpi >= 100 && setup.dpi <= 32000 && setup.valorantSens >= 0.01 && setup.valorantSens <= 10
+  const eDPI = valid ? Math.round(setup.dpi * setup.valorantSens) : '—'
+  const sens = Number(setup.valorantSens)
+  const sensLevel = sens <= 0.10 ? 0 : sens <= 0.25 ? 1 : sens <= 0.30 ? 2 : sens <= 0.35 ? 3 : sens <= 0.40 ? 4 : 5
+  const stepSens = (delta) => setSetup({ ...setup, valorantSens: Math.min(10, Math.max(0.01, Number(((sens || 0.5) + delta).toFixed(2)))) })
+  useEffect(() => { dialogRef.current.showModal() }, [])
+  return <dialog ref={dialogRef} className="af-setup" aria-labelledby="setup-title" onCancel={onClose} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <form onSubmit={e => { e.preventDefault(); if (valid) onConfirm({ dpi: Number(setup.dpi), valorantSens: Number(setup.valorantSens), eDPI }) }}>
+      <div className="af-setup-heading">
+        <div><span id="setup-title">{copy.setup}</span></div>
+        <button type="button" aria-label={copy.close} onClick={onClose}>×</button>
       </div>
-    </div>
-  )
+      <div className="af-setting-block">
+        <div className="af-setting-label"><label htmlFor="player-dpi">{copy.dpi}</label></div>
+        <div className="af-presets">{[400, 800, 1600, 3200].map(dpi => <button key={dpi} type="button" aria-pressed={Number(setup.dpi) === dpi} onClick={() => setSetup({ ...setup, dpi })}>{dpi}</button>)}</div>
+        <div className="af-number-input"><input id="player-dpi" type="number" min="100" max="32000" required value={setup.dpi} onChange={e => setSetup({ ...setup, dpi: e.target.value })} /><span>DPI</span></div>
+      </div>
+      <div className="af-setting-block">
+        <div className="af-setting-label"><label htmlFor="player-sens">{copy.sens}</label></div>
+        <div className="af-sens-input"><button type="button" aria-label={`${copy.sens} −0.01`} onClick={() => stepSens(-0.01)}>−</button><input id="player-sens" type="number" min="0.01" max="10" step="0.01" required value={setup.valorantSens} onChange={e => setSetup({ ...setup, valorantSens: e.target.value })} /><button type="button" aria-label={`${copy.sens} +0.01`} onClick={() => stepSens(0.01)}>+</button></div>
+      </div>
+      <div className="af-sensitivity"><span>eDPI <strong>{eDPI}</strong></span><span>cm/360° <strong>{valid ? (360 / (setup.valorantSens * 0.07 * setup.dpi / 2.54)).toFixed(1) : '—'}</strong></span><span>{t.level}<strong className="af-sens-level">{valid ? t.sensLevels[sensLevel] : '—'}</strong></span></div>
+      <button className="af-button" type="submit" disabled={!valid}><span>{copy.confirm}</span><span aria-hidden="true">→</span></button>
+    </form>
+  </dialog>
 }
 
-function Home() {
+function ModeIcon({ type }) {
+  return <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    {type === 'solo' ? <><circle cx="24" cy="24" r="13"/><circle cx="24" cy="24" r="5"/><path d="M24 3v12m0 18v12M3 24h12m18 0h12"/></> : type === 'match' ? <><path d="m6 10 14 14L6 38M42 10 28 24l14 14M15 8l9 9 9-9M15 40l9-9 9 9"/></> : type === 'shop' ? <><path d="M8 17h32l-2 25H10Z"/><path d="M17 19v-5a7 7 0 0 1 14 0v5"/></> : <><path d="m24 4 16 7v13L24 44 8 24V11Z"/><path d="m16 27 8-14 8 14-8-4Z"/></>}
+  </svg>
+}
+
+export default function Home() {
+  const { lang } = useLanguage()
+  const c = COPY[lang] || COPY.kr
   const navigate = useNavigate()
-  const { t } = useLanguage()
   const [showSetup, setShowSetup] = useState(false)
-  const [themeMode, setThemeMode] = useState(() => {
-    return localStorage.getItem('themeMode') || 'system'
-  })
-
-  const resolveTheme = (mode) => {
-    if (mode === 'system') {
-      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    }
-    return mode
+  const [activeMode, setActiveMode] = useState(0)
+  const modeTypes = ['solo', 'match', 'rank']
+  const handleModeEnter = (index) => {
+    setActiveMode(index)
+    localStorage.setItem('selectedGameMode', modeTypes[index])
+    setShowSetup(true)
   }
-
-  const theme = resolveTheme(themeMode)
-  const dark = theme === 'dark'
-
-  useEffect(() => {
-    const handleThemeChange = (e) => setThemeMode(e.detail)
-    window.addEventListener('theme-change', handleThemeChange)
-    return () => window.removeEventListener('theme-change', handleThemeChange)
-  }, [])
-
-  const handleConfirm = ({ dpi, valorantSens, eDPI }) => {
-    localStorage.setItem('userSetup', JSON.stringify({ dpi, valorantSens, eDPI }))
-    localStorage.setItem('userSensitivity', (eDPI / 400).toString())
+  const handleConfirm = (setup) => {
+    localStorage.setItem('userSetup', JSON.stringify(setup))
+    localStorage.setItem('userSensitivity', (setup.eDPI / 400).toString())
     navigate('/test1')
   }
-
-  return (
-    <Layout>
-      {showSetup && (
-        <SetupModal
-          theme={theme}
-          onClose={() => setShowSetup(false)}
-          onConfirm={handleConfirm}
-        />
-      )}
-
-      {/* Hero */}
-      <section className={`relative overflow-hidden ${dark ? 'bg-[#080B10]' : 'bg-[#F4F7F9]'}`}>
-        {/* Background glow */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: dark
-              ? 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,211,238,0.07) 0%, transparent 70%)'
-              : 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(8,145,178,0.08) 0%, transparent 70%)',
-          }}
-        />
-
-        <div className="max-w-6xl mx-auto px-5 pt-24 pb-20 text-center relative">
-          <div className="max-w-2xl mx-auto animate-fade-up">
-            {/* Badge */}
-            <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-7 border text-xs font-semibold tracking-wide"
-              style={dark
-                ? { background: 'rgba(34,211,238,0.08)', borderColor: 'rgba(34,211,238,0.25)', color: '#22D3EE' }
-                : { background: 'rgba(34,211,238,0.1)', borderColor: 'rgba(34,211,238,0.3)', color: '#0891B2' }
-              }
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] animate-pulse" />
-              {t.badge}
+  return <Layout isLobby>
+    <div className="af-lobby">
+      {showSetup && <SetupModal copy={c} onClose={() => setShowSetup(false)} onConfirm={handleConfirm} />}
+      <div className="af-world" aria-hidden="true"><div className="af-world-shade" /><div className="af-world-frame" /></div>
+      <section className="af-game-stage" aria-labelledby="lobby-title">
+        <div className="af-stage-heading" key={activeMode}>
+          <h1 id="lobby-title">{c.titles[activeMode]}</h1>
+          <p className="af-stage-subtitle">{c.subtitles[activeMode]}</p>
+        </div>
+        <div className="af-lobby-controls">
+          <div className="af-mode-section">
+            <div className="af-mode-picker" role="group" aria-label={c.modeLabel}>
+              {modeTypes.map((type, index) => <button key={type} className="af-mode-option" disabled={index > 0} onMouseEnter={() => setActiveMode(index)} onFocus={() => setActiveMode(index)} onClick={() => handleModeEnter(index)}>
+                <ModeIcon type={type} />
+                <span className="af-mode-copy"><strong>{c.modes[index]}</strong><span>{index === 0 ? '60 SEC' : c.soon}</span></span>
+                <span className={`af-mode-indicator ${index === 0 ? 'af-mode-enter' : ''}`} aria-hidden="true">{index === 0 ? '→' : <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"><rect x="3.5" y="7" width="9" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>}</span>
+              </button>)}
+              <button className="af-shop-button" type="button" disabled title={c.soon}>
+                <ModeIcon type="shop" />
+                <span className="af-mode-copy"><strong>{c.shop}</strong><span>{c.soon}</span></span>
+                <span className="af-mode-indicator" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor"><rect x="3.5" y="7" width="9" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg></span>
+              </button>
             </div>
-
-            {/* Title */}
-            <h1 className={`text-5xl md:text-6xl font-black leading-[1.1] mb-6 tracking-tight ${dark ? 'text-[#F1F5F9]' : 'text-[#0F172A]'}`}>
-              {t.heroLine1}<br />
-              <span className="text-[#22D3EE]">{t.heroLine2}</span><br />
-              {t.heroLine3}
-            </h1>
-
-            <p className={`text-base md:text-lg leading-relaxed mb-10 max-w-lg mx-auto ${dark ? 'text-[#64748B]' : 'text-[#475569]'}`}>
-              {t.heroSubtitle}
-            </p>
-
-            {/* CTA */}
-            <div className="flex flex-col items-center gap-3">
-              <AimButton href="/drills">
-                {t.startTestBtn}
-              </AimButton>
-            </div>
-          </div>
-
-          {/* Stats bar */}
-          <div className={`mt-16 max-w-lg mx-auto rounded-2xl border px-8 py-5 flex justify-around ${
-            dark ? 'bg-[#111820]/80 border-[#27313A]' : 'bg-white/80 border-[#D7E0E8]'
-          }`}>
-            {[
-              { value: '1', label: dark ? '훈련 모듈' : 'Drill Modules' },
-              { value: '100%', label: dark ? '무료' : 'Free' },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <p className="text-2xl font-black text-[#22D3EE]">{stat.value}</p>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-[#64748B]' : 'text-[#64748B]'}`}>{stat.label}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
-    </Layout>
-  )
+    </div>
+  </Layout>
 }
-
-export default Home

@@ -35,7 +35,8 @@ body {
 }
 
 html {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
+  background: #101815;
 }
 
 @keyframes fade-up {
@@ -49,3 +50,10 @@ html {
 .animate-fade-up-d1 { animation-delay: 0.1s; }
 .animate-fade-up-d2 { animation-delay: 0.2s; }
 .animate-fade-up-d3 { animation-delay: 0.3s; }
+
+.af-topbar { height: 64px; position: relative; display: flex; align-items: center; justify-content: flex-end; padding: 0 28px; }
+.af-brand-position { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.af-logo { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 21px; font-weight: 900; letter-spacing: 1px; }
+.af-logo-mark { width: 28px; height: 28px; color: #f3834c; }
+.af-settings-position { position: relative; }
+@media (max-width: 600px) { .af-topbar { padding-inline: 18px; } .af-logo { font-size: 18px; gap: 8px; } .af-logo-mark { width: 24px; height: 24px; } }

@@ -45,7 +45,7 @@ export default [
     },
   },
   {
-    files: ['src/components/GunViewModel.jsx', 'src/components/*Sim.jsx', 'src/components/*Canvas.jsx'],
+    files: ['src/components/GunViewModel.jsx', 'src/components/Range*.jsx', 'src/components/*Sim.jsx', 'src/components/*Canvas.jsx'],
     rules: {
       'react/no-unknown-property': 'off',
     },

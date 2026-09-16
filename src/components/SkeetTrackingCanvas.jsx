@@ -1,19 +1,24 @@
-import { Suspense, useCallback, useEffect, useRef } from 'react'
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
 import GunViewModel from './GunViewModel'
+import RangeFront from './RangeFront'
+import RangeInterior from './RangeInterior'
+import RangeStaticBatch from './RangeStaticBatch'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
 const PLAYER_START_Z = -3
 const PLAYER_START_POSITION = [0, PLAYER_EYE_Y, PLAYER_START_Z]
-const CAMERA_CONFIG = { position: PLAYER_START_POSITION, fov: 75, near: 0.01, far: 1000 }
+const CAMERA_CONFIG = { position: PLAYER_START_POSITION, fov: 75, near: 0.05, far: 60 }
 const PITCH_LIMIT = Math.PI / 2.2
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
-const HP_BAR_SCALE = 0.8
+const RENDER_DPR = [1, 1.5]
+const RENDER_OPTIONS = { antialias: true, precision: 'highp', powerPreference: 'high-performance', alpha: false }
+
 
 const WALL_X = 6
 const FLOOR_Y = -2.0
@@ -33,26 +38,26 @@ const TARGET_WINDOW = {
 
 const ROOM_THEME = {
   dark: {
-    background: '#101820',
-    fog: '#101820',
-    backWall: '#242E38',
-    sideWall: '#202933',
-    floor: '#1A222B',
-    ceiling: '#27313B',
-    frame: '#3A4652',
-    hpTrack: '#18212A',
-    fogNear: 13,
-    fogFar: 28,
-    ambient: 0.62,
-    hemiSky: '#7DD3FC',
-    hemiGround: '#19222B',
-    hemiIntensity: 0.76,
-    keyLight: '#EAF6FF',
-    keyIntensity: 0.92,
-    fillLight: '#22D3EE',
-    fillIntensity: 0.78,
-    rimLight: '#F59E0B',
-    rimIntensity: 0.48,
+    background: '#111c17',
+    fog: '#111c17',
+    backWall: '#34443a',
+    sideWall: '#77766c',
+    floor: '#626257',
+    ceiling: '#383d39',
+    frame: '#77867a',
+    hpTrack: '#101814',
+    fogNear: 14,
+    fogFar: 31,
+    ambient: 0.65,
+    hemiSky: '#e8e9e5',
+    hemiGround: '#42473e',
+    hemiIntensity: 0.65,
+    keyLight: '#FFF2DC',
+    keyIntensity: 1.65,
+    fillLight: '#F3834C',
+    fillIntensity: 0.88,
+    rimLight: '#F6B77E',
+    rimIntensity: 0.68,
   },
   light: {
     background: '#DDE6EB',
@@ -126,18 +131,16 @@ function makeWindowTarget(idx, total, ballRadius, heightCfg) {
   }
 }
 
-function getWindowTargetPosition(target, ballRadius) {
-  const bounds = getWindowBounds(ballRadius)
+function getWindowTargetPosition(target, ballRadius, out = [], bounds = getWindowBounds(ballRadius)) {
   const t = Math.max(0, Math.min(target.t, 1))
   const x = target.startX + (target.endX - target.startX) * t
   const invT = 1 - t
   const y = invT * invT * target.startY + 2 * invT * t * target.peakY + t * t * target.endY
 
-  return [
-    x,
-    Math.max(bounds.minY, Math.min(bounds.maxY, y)),
-    TARGET_WINDOW.targetZ,
-  ]
+  out[0] = x
+  out[1] = Math.max(bounds.minY, Math.min(bounds.maxY, y))
+  out[2] = TARGET_WINDOW.targetZ
+  return out
 }
 
 function isTargetInOpening(position, ballRadius) {
@@ -200,22 +203,20 @@ function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [camera, handleMouseMove])
 
-  useFrame(() => {
-    camera.position.set(...PLAYER_START_POSITION)
-  })
-
   return null
 }
 
-const GREEN = new THREE.Color('#22c55e')
+
+const GREEN = new THREE.Color('#a6f47b')
 const YELLOW = new THREE.Color('#facc15')
 const RED_HP = new THREE.Color('#ef4444')
 const tmpColor = new THREE.Color()
 
 function hpColor(hp) {
-  if (hp > 0.5) return tmpColor.lerpColors(YELLOW, GREEN, (hp - 0.5) * 2).clone()
-  return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2).clone()
+  if (hp > 0.5) return tmpColor.lerpColors(YELLOW, GREEN, (hp - 0.5) * 2)
+  return tmpColor.lerpColors(RED_HP, YELLOW, hp * 2)
 }
+
 
 function Scene({
   sensitivity,
@@ -232,39 +233,27 @@ function Scene({
   statsRef,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
-  const windowHalfW = TARGET_WINDOW.width / 2
-  const windowHalfH = TARGET_WINDOW.height / 2
-  const windowBottom = TARGET_WINDOW.centerY - windowHalfH
-  const windowTop = TARGET_WINDOW.centerY + windowHalfH
-  const sideWallWidth = WALL_X - windowHalfW
-  const topWallHeight = CEIL_Y - windowTop
-  const bottomWallHeight = windowBottom - FLOOR_Y
   const sideWallHeight = CEIL_Y - FLOOR_Y + SEAM_OVERLAP
   const sideWallCenterY = FLOOR_Y + (CEIL_Y - FLOOR_Y) / 2 - SEAM_OVERLAP / 2
-  const wallPieces = [
-    { key: 'top', position: [0, windowTop + topWallHeight / 2, BACK_Z], size: [WALL_X * 2, topWallHeight] },
-    { key: 'bottom', position: [0, FLOOR_Y + bottomWallHeight / 2, BACK_Z], size: [WALL_X * 2, bottomWallHeight] },
-    { key: 'left', position: [-(windowHalfW + sideWallWidth / 2), TARGET_WINDOW.centerY, BACK_Z], size: [sideWallWidth, TARGET_WINDOW.height] },
-    { key: 'right', position: [windowHalfW + sideWallWidth / 2, TARGET_WINDOW.centerY, BACK_Z], size: [sideWallWidth, TARGET_WINDOW.height] },
-  ].filter((piece) => piece.size[0] > 0 && piece.size[1] > 0)
-  const frame = TARGET_WINDOW.frame
-  const framePieces = [
-    { key: 'frame-top', position: [0, windowTop + frame / 2, BACK_Z + 0.018], size: [TARGET_WINDOW.width + frame * 2, frame] },
-    { key: 'frame-bottom', position: [0, windowBottom - frame / 2, BACK_Z + 0.018], size: [TARGET_WINDOW.width + frame * 2, frame] },
-    { key: 'frame-left', position: [-(windowHalfW + frame / 2), TARGET_WINDOW.centerY, BACK_Z + 0.018], size: [frame, TARGET_WINDOW.height] },
-    { key: 'frame-right', position: [windowHalfW + frame / 2, TARGET_WINDOW.centerY, BACK_Z + 0.018], size: [frame, TARGET_WINDOW.height] },
-  ]
-  const barW = ballRadius * 2.25 * HP_BAR_SCALE
-  const barH = ballRadius * 0.45 * HP_BAR_SCALE
-  const barY = ballRadius + 0.1
+  const barW = Math.max(0.28, ballRadius * 2.6)
+  const barH = 0.045
+  const barY = ballRadius + 0.14
   const groups = useRef([])
   const spheres = useRef([])
   const hpFills = useRef([])
   const barGroups = useRef([])
-  const targets = useRef(Array.from(
-    { length: NUM_BALLS_MAX },
-    (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg),
-  ))
+  const targets = useRef(null)
+  const initialPositions = useRef(null)
+  if (!targets.current) {
+    targets.current = Array.from({ length: NUM_BALLS_MAX },
+      (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg))
+    initialPositions.current = targets.current.map((target) => getWindowTargetPosition(target, ballRadius))
+  }
+  const targetBounds = useMemo(() => getWindowBounds(ballRadius), [ballRadius])
+  const nextPosition = useRef([0, 0, 0])
+  const visibleSpheres = useRef([])
+  const intersections = useRef([])
+  const hitMask = useRef(new Uint8Array(NUM_BALLS_MAX))
   const hp = useRef(Array(NUM_BALLS_MAX).fill(1.0))
   const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
   const elapsed = useRef(0)
@@ -300,7 +289,8 @@ function Scene({
   useFrame((_, delta) => {
     if (!active) return
 
-    elapsed.current += delta
+    const frameDelta = Math.min(delta, 0.05)
+    elapsed.current += frameDelta
 
     for (let i = 0; i < numBalls; i++) {
       const target = targets.current[i]
@@ -308,13 +298,13 @@ function Scene({
       const barGroup = barGroups.current[i]
       if (!group) continue
 
-      target.t += delta * target.speed * speedMult
+      target.t += frameDelta * target.speed * speedMult
       if (target.t >= 1) {
         resetBall(i)
         continue
       }
 
-      group.position.set(...getWindowTargetPosition(target, ballRadius))
+      group.position.set(...getWindowTargetPosition(target, ballRadius, nextPosition.current, targetBounds))
       const visibleInOpening = isTargetInOpening(group.position, ballRadius)
       if (barGroup) {
         barGroup.visible = visibleInOpening
@@ -324,40 +314,42 @@ function Scene({
 
     if (!document.pointerLockElement) return
 
+    camera.updateMatrixWorld()
     raycaster.setFromCamera({ x: 0, y: 0 }, camera)
-    const visibleSpheres = []
-    const sphereIndexes = new Map()
+    const visible = visibleSpheres.current
+    const contacts = intersections.current
+    const hits = hitMask.current
+    visible.length = 0
+    contacts.length = 0
+    hits.fill(0)
     for (let i = 0; i < numBalls; i++) {
       const sphere = spheres.current[i]
       const group = groups.current[i]
       if (!sphere || !group || !isTargetInOpening(group.position, ballRadius)) continue
 
-      visibleSpheres.push(sphere)
-      sphereIndexes.set(sphere, i)
+      sphere.updateWorldMatrix(true, false)
+      visible.push(sphere)
     }
-    const hits = new Set(
-      raycaster.intersectObjects(visibleSpheres)
-        .map((hit) => sphereIndexes.get(hit.object))
-        .filter((idx) => idx !== undefined),
-    )
+    raycaster.intersectObjects(visible, false, contacts)
+    for (const hit of contacts) hits[hit.object.userData.targetIndex] = 1
 
-    if (statsRef && visibleSpheres.length > 0) {
+    if (statsRef && visible.length > 0) {
       statsRef.current.activeFrames++
-      if (hits.size > 0) statsRef.current.hitFrames++
+      if (contacts.length > 0) statsRef.current.hitFrames++
     }
 
     for (let i = 0; i < numBalls; i++) {
       const fill = hpFills.current[i]
       if (!fill) continue
 
-      if (!hits.has(i)) continue
+      if (!hits[i]) continue
 
       if (firstContact.current[i] === -1) {
         firstContact.current[i] = elapsed.current
       }
 
       const prevHp = hp.current[i]
-      const drainAmt = delta / (DRAIN_TIME * drainMult)
+      const drainAmt = frameDelta / (DRAIN_TIME * drainMult)
       hp.current[i] = Math.max(0, prevHp - drainAmt)
       const h = hp.current[i]
       const actualDrain = prevHp - h
@@ -385,34 +377,41 @@ function Scene({
   return (
     <>
       <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
+      <RangeStaticBatch />
       <color attach="background" args={[room.background]} />
       <fog attach="fog" args={[room.fog, room.fogNear, room.fogFar]} />
       <ambientLight intensity={room.ambient} />
       <hemisphereLight args={[room.hemiSky, room.hemiGround, room.hemiIntensity]} />
-      <directionalLight position={[-3.5, 5.4, -4.5]} intensity={room.keyIntensity} color={room.keyLight} />
+      <directionalLight
+        castShadow
+        position={[-2.5, 5.4, 1]}
+        intensity={room.keyIntensity}
+        color={room.keyLight}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-camera-left={-9}
+        shadow-camera-right={9}
+        shadow-camera-top={7}
+        shadow-camera-bottom={-7}
+        shadow-camera-near={0.5}
+        shadow-camera-far={28}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.025}
+      />
       <spotLight position={[0, 4.2, -3.2]} angle={0.58} penumbra={0.8} intensity={room.fillIntensity} color={room.fillLight} distance={15} />
       <pointLight position={[-4.8, 2.7, -9]} intensity={room.rimIntensity} color={room.rimLight} distance={10} />
       <pointLight position={[4.8, 2.7, -9]} intensity={room.fillIntensity * 0.45} color={room.fillLight} distance={10} />
 
-      {wallPieces.map((piece) => (
-        <mesh key={piece.key} position={piece.position}>
-          <planeGeometry args={piece.size} />
-          <meshStandardMaterial color={room.backWall} roughness={0.88} metalness={0.04} />
-        </mesh>
-      ))}
-      {framePieces.map((piece) => (
-        <mesh key={piece.key} position={piece.position}>
-          <planeGeometry args={piece.size} />
-          <meshStandardMaterial color={room.frame} roughness={0.82} metalness={0.08} />
-        </mesh>
-      ))}
-      <mesh position={[-WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
+      <RangeInterior />
+
+      <RangeFront opening={TARGET_WINDOW} backZ={BACK_Z} floorY={FLOOR_Y} ceilingY={CEIL_Y} wallX={WALL_X} />
+      <mesh receiveShadow position={[-WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), sideWallHeight]} />
         {theme === 'light'
           ? <meshBasicMaterial color={room.sideWall} />
           : <meshStandardMaterial color={room.sideWall} roughness={0.9} metalness={0.03} />}
       </mesh>
-      <mesh position={[WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh receiveShadow position={[WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), sideWallHeight]} />
         {theme === 'light'
           ? <meshBasicMaterial color={room.sideWall} />
@@ -422,26 +421,24 @@ function Scene({
         <planeGeometry args={[WALL_X * 2 + SEAM_OVERLAP * 2, Math.abs(BACK_Z)]} />
         {theme === 'light'
           ? <meshBasicMaterial color={room.floor} />
-          : <meshStandardMaterial color={room.floor} roughness={0.96} metalness={0.02} />}
+          : <meshStandardMaterial color={room.floor} roughness={0.88} metalness={0.02} />}
       </mesh>
       {[-1, 1].map((side) => (
         <mesh
           key={`floor-seam-cover-${side}`}
-          position={[side * (WALL_X - SEAM_OVERLAP / 2), FLOOR_Y + 0.006, BACK_Z / 2]}
-          rotation={[-Math.PI / 2, 0, 0]}
+          position={[side * (WALL_X - SEAM_OVERLAP / 2), FLOOR_Y + 0.015, BACK_Z / 2]}
         >
-          <planeGeometry args={[SEAM_OVERLAP + 0.22, Math.abs(BACK_Z)]} />
-          <meshBasicMaterial color={room.floor} />
+          <boxGeometry args={[SEAM_OVERLAP + 0.22, 0.03, Math.abs(BACK_Z)]} />
+          <meshStandardMaterial color={room.floor} roughness={0.94} metalness={0.04} />
         </mesh>
       ))}
       {[-1, 1].map((side) => (
         <mesh
           key={`wall-cove-cover-${side}`}
-          position={[side * (WALL_X - 0.006), FLOOR_Y + SEAM_COVE_HEIGHT / 2, BACK_Z / 2]}
-          rotation={[0, side < 0 ? Math.PI / 2 : -Math.PI / 2, 0]}
+          position={[side * (WALL_X - 0.018), FLOOR_Y + SEAM_COVE_HEIGHT / 2, BACK_Z / 2]}
         >
-          <planeGeometry args={[Math.abs(BACK_Z), SEAM_COVE_HEIGHT]} />
-          <meshBasicMaterial color={room.floor} />
+          <boxGeometry args={[0.036, SEAM_COVE_HEIGHT, Math.abs(BACK_Z)]} />
+          <meshStandardMaterial color={room.floor} roughness={0.94} metalness={0.04} />
         </mesh>
       ))}
       <mesh position={[0, CEIL_Y, BACK_Z / 2]} rotation={[Math.PI / 2, 0, 0]}>
@@ -450,27 +447,27 @@ function Scene({
       </mesh>
 
       {Array.from({ length: numBalls }, (_, i) => {
-        const initialPosition = getWindowTargetPosition(targets.current[i], ballRadius)
+        const initialPosition = initialPositions.current[i]
 
         return (
           <group key={i} ref={(el) => { groups.current[i] = el }} position={initialPosition}>
-            <mesh ref={(el) => { spheres.current[i] = el }}>
+            <mesh name="tracking-target" ref={(el) => { spheres.current[i] = el }} userData={{ targetIndex: i }}>
               <sphereGeometry args={[ballRadius, 24, 24]} />
-              <meshStandardMaterial color={ballColor} roughness={0.6} metalness={0.2} />
+              <meshStandardMaterial color={ballColor} emissive={ballColor} emissiveIntensity={0.6} roughness={0.42} metalness={0.24} />
             </mesh>
 
             <group
               ref={(el) => { barGroups.current[i] = el }}
-              position={[0, barY, 0]}
+              position={[0, barY, ballRadius + 0.035]}
               visible={isTargetInOpening(initialPosition, ballRadius)}
             >
-              <mesh>
+              <mesh position={[0, 0, 0.006]} renderOrder={21}>
                 <planeGeometry args={[barW, barH]} />
-                <meshBasicMaterial color={room.hpTrack} depthWrite={false} />
+                <meshBasicMaterial color="#111914" toneMapped={false} fog={false} depthWrite={false} />
               </mesh>
-              <mesh ref={(el) => { hpFills.current[i] = el }} position={[0, 0, 0.01]}>
+              <mesh ref={(el) => { hpFills.current[i] = el }} position={[0, 0, 0.012]} renderOrder={22}>
                 <planeGeometry args={[barW, barH]} />
-                <meshBasicMaterial color="#22c55e" depthWrite={false} />
+                <meshBasicMaterial color="#a6f47b" toneMapped={false} fog={false} depthWrite={false} />
               </mesh>
             </group>
           </group>
@@ -480,7 +477,7 @@ function Scene({
   )
 }
 
-export default function SkeetTrackingCanvas({
+function SkeetTrackingCanvas({
   theme,
   sensitivity,
   dpi,
@@ -501,10 +498,15 @@ export default function SkeetTrackingCanvas({
 
   return (
     <Canvas
-      dpr={[1, 1.5]}
-      gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
+      shadows="soft"
+      dpr={RENDER_DPR}
+      gl={RENDER_OPTIONS}
       camera={CAMERA_CONFIG}
-      onCreated={onCanvasReady}
+      onCreated={({ gl }) => {
+        gl.toneMapping = THREE.ACESFilmicToneMapping
+        gl.toneMappingExposure = 1.08
+        onCanvasReady?.()
+      }}
     >
       <color attach="background" args={[room.background]} />
       <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
@@ -528,3 +530,5 @@ export default function SkeetTrackingCanvas({
     </Canvas>
   )
 }
+
+export default memo(SkeetTrackingCanvas)

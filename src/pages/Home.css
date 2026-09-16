@@ -1,0 +1,84 @@
+.af-layout { --af-accent: #f3834c; --af-bg: #101815; --af-panel: #17201c; --af-text: #f0f1e9; --af-muted: #a0aba2; --af-border: #ffffff25; background: var(--af-bg) !important; color: var(--af-text) !important; }
+.af-layout[data-theme="light"] { --af-panel: #eeeFE7; --af-text: #202a23; --af-muted: #5b685e; --af-border: #bfc8be; }
+.af-layout > header { position: absolute; inset: 0 0 auto; background: linear-gradient(#080e12bf, #080e1200) !important; border: 0; backdrop-filter: none; }
+.af-layout .af-topbar { height: 82px; padding-inline: 36px; }
+.af-layout .af-logo { color: #f1f2e9; font-size: 22px; letter-spacing: 2px; }
+.af-layout .af-settings-position > button { color: #d0d7d1 !important; width: 40px; height: 40px; }
+.af-layout main { display: block; }
+.af-layout #game-settings { width: 282px; padding: 20px; border-radius: 2px; border-color: #ffffff24 !important; background: rgba(13, 21, 17, .97) !important; color: #eef1e9; box-shadow: 0 22px 70px #000b, inset 0 1px #ffffff0d; backdrop-filter: blur(18px); }
+.af-layout #game-settings button { border-radius: 2px; }
+.af-layout #game-settings .my-4 { margin-block: 18px; background: #ffffff18 !important; }
+.af-game-settings-title { display: flex; align-items: center; justify-content: space-between; }
+.af-game-settings-title > span { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
+.af-game-settings-title small { color: #7e8c83; font: 8px 'Consolas', monospace; letter-spacing: 1px; }
+.af-lobby { min-height: 100svh; position: relative; isolation: isolate; background: #101815; overflow: clip; color: #f0f1e9; }
+.af-world { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #0d1512 url('/aimforge-lobby-concept-01.png') center center / cover no-repeat; }
+.af-world-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #07110ef0 0%, #08120fc7 19%, #09141045 46%, transparent 72%), linear-gradient(0deg, #07100ff7 0%, #08110fbd 19%, transparent 48%, #080e1240 100%); }
+.af-world-frame { position: absolute; inset: 102px 35px 29px; border: 1px solid #d3e0c70d; clip-path: polygon(0 0, 25px 0, 25px 1px, calc(100% - 25px) 1px, calc(100% - 25px) 0, 100% 0, 100% 100%, 0 100%); }
+.af-game-stage { min-height: 100svh; max-width: 1800px; margin: auto; padding: clamp(154px, 25vh, 280px) 6vw 54px; display: flex; flex-direction: column; position: relative; }
+.af-stage-heading { position: absolute; left: 6vw; top: 50%; translate: 0 -50%; width: min(620px, calc(100% - 48px)); max-width: 620px; text-align: left; animation: af-reveal .3s ease-out both; }
+.af-kicker { font: 11px 'Consolas', monospace; letter-spacing: 4px; font-weight: 600; color: var(--af-accent); }
+.af-stage-heading h1 { font-size: clamp(54px, 6.4vw, 94px); font-weight: 900; line-height: 1.12; letter-spacing: -4px; margin: 0 0 20px; word-break: keep-all; text-shadow: 0 4px 35px #07100d55; }
+.af-stage-subtitle { color: #b3beb5; font-size: 14px; letter-spacing: .1px; }
+.af-lobby-controls { margin-top: auto; padding-top: 100px; }
+.af-mode-section { width: 100%; max-width: 760px; margin-inline: auto; }
+.af-mode-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.af-mode-option, .af-shop-button { display: flex; align-items: center; gap: 11px; width: 100%; min-width: 0; height: 92px; padding: 20px 12px; text-align: left; position: relative; border-radius: 2px; }
+.af-mode-option, .af-shop-button { color: #9da9a1; background: #16221bb3; border: 1px solid #bdcbbb26; transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.af-mode-option { cursor: pointer; }
+.af-mode-option:disabled { cursor: not-allowed; opacity: 1; }
+.af-mode-option > svg, .af-shop-button > svg { width: 30px; height: 30px; flex-shrink: 0; }
+.af-mode-option:hover:not(:disabled) { background: linear-gradient(120deg, rgba(243, 131, 76, .18), rgba(24, 34, 28, .86) 72%); border-color: rgba(243, 131, 76, .58); color: #f4f0df; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0, 0, 0, .22), inset 0 0 0 1px rgba(243, 131, 76, .08); }
+.af-mode-option:hover:not(:disabled) > svg { color: var(--af-accent); }
+.af-mode-copy { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.af-mode-copy strong { font-size: 13px; font-weight: 700; word-break: keep-all; }
+.af-mode-copy > span { font-size: 9px; letter-spacing: .8px; color: #9aa69d; }
+.af-mode-indicator { align-self: flex-start; margin-left: auto; color: #8a978d; font-size: 8px; }
+.af-mode-indicator svg { width: 12px; height: 12px; }
+.af-mode-option:hover:not(:disabled) .af-mode-indicator { color: var(--af-accent); }
+.af-mode-enter { font-size: 17px; line-height: 1; transition: transform .2s ease; }
+.af-mode-option:hover:not(:disabled) .af-mode-enter { transform: translateX(2px); }
+.af-shop-button { cursor: not-allowed; }
+.af-shop-button:disabled { opacity: 1; }
+.af-lobby :is(button,a,input):focus-visible, .af-layout header :is(button,a):focus-visible { outline: 2px solid #ffb780; outline-offset: 4px; }
+.af-setup { margin: auto; padding: 0; width: min(420px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow: auto; border: 1px solid #ffffff29; border-radius: 3px; color: #eef1e9; background: rgba(14, 22, 18, .98); box-shadow: 0 24px 80px #000c, inset 0 1px #ffffff0c; }
+.af-setup::backdrop { background: #050907db; backdrop-filter: blur(9px); }
+.af-setup form { padding: 0 22px 22px; }
+.af-setup-heading { height: 54px; margin-inline: -22px; padding-inline: 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ffffff17; }
+.af-setup-heading > div { display: flex; align-items: baseline; gap: 12px; }
+.af-setup-heading > div > span { font-size: 11px; font-weight: 800; letter-spacing: 1.6px; color: #f3834c; }
+.af-setup-heading button { display: grid; place-items: center; width: 30px; height: 30px; color: #aab4ad; border: 1px solid transparent; font-size: 22px; line-height: 1; cursor: pointer; }
+.af-setup-heading button:hover { color: #fff; border-color: #ffffff24; background: #ffffff0b; }
+.af-setup-heading + .af-setting-block { margin-top: 18px; }
+.af-setting-block { padding: 13px; margin-bottom: 8px; border: 1px solid #ffffff18; background: #ffffff07; }
+.af-setting-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
+.af-setup label { font-size: 11px; font-weight: 700; color: #d9ded8; }
+.af-setup input { width: 100%; height: 40px; padding: 0 12px; color: #f4f5ef; background: #09110d; border: 1px solid #ffffff1f; font-size: 15px; outline: none; }
+.af-setup input:focus { border-color: #f3834c9c; box-shadow: 0 0 0 2px #f3834c14; }
+.af-number-input { position: relative; }
+.af-number-input input { padding-right: 54px; }
+.af-number-input > span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #6f7d74; font-size: 9px; pointer-events: none; }
+.af-presets { display: flex; gap: 6px; margin-bottom: 7px; }
+.af-presets button { flex: 1; height: 30px; color: #929e96; border: 1px solid #ffffff1b; background: #ffffff05; font-size: 10px; font-weight: 600; cursor: pointer; }
+.af-presets button:hover { color: #e8ede7; border-color: #ffffff3a; }
+.af-presets button[aria-pressed="true"] { color: #171e19; border-color: #f3834c; background: #f3834c; }
+.af-sensitivity { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 2px 0 11px; font-size: 8px; font-weight: 600; color: #7d8a82; }
+.af-sensitivity > span { min-height: 57px; padding: 9px 10px; border: 1px solid #ffffff15; background: #090f0c5e; }
+.af-sensitivity strong { display: block; font-size: 16px; margin-top: 4px; color: #eef1e9; }
+.af-sens-input { display: flex; gap: 8px; }
+.af-sens-input input { min-width: 0; text-align: center; }
+.af-sens-input button { width: 40px; flex-shrink: 0; color: #bbc4bd; border: 1px solid #ffffff1f; background: #101915; font-size: 18px; cursor: pointer; }
+.af-sens-input button:hover { color: #f3834c; border-color: #f3834c78; }
+.af-sensitivity .af-sens-level { font-family: inherit; font-size: 13px; line-height: 24px; }
+.af-button { display: flex; width: 100%; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 17px; font-size: 12px; font-weight: 800; background: #f3834c; color: #172219; border: 1px solid #ffb687; border-radius: 2px; cursor: pointer; }
+.af-button:hover { background: #ffae7b; }
+.af-button > span:first-child { font-size: 13px; }
+.af-button > span:last-child { font-size: 21px; }
+.af-button:disabled { opacity: .4; cursor: not-allowed; }
+.af-setup, .af-setup button, .af-setup input { font-family: inherit; }
+@keyframes af-reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (min-width: 1800px) { .af-game-stage { padding-inline: 100px; } }
+@media (max-width: 1100px) { .af-game-stage { padding-inline: 5vw; } .af-mode-option, .af-shop-button { gap: 8px; padding: 18px 10px; } .af-mode-option > svg, .af-shop-button > svg { width: 24px; height: 24px; } .af-mode-indicator { display: none; } .af-mode-copy strong { font-size: 12px; } }
+@media (max-width: 800px) { .af-mode-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } .af-lobby-controls { padding-top: 70px; } .af-game-stage { padding-top: 150px; padding-bottom: 30px; } .af-stage-heading { left: 24px; top: 47%; } .af-stage-heading h1 { font-size: 60px; } .af-world { background-position: 57% center; } .af-world-shade { background: linear-gradient(90deg, #081310d9, #08131022 85%), linear-gradient(0deg, #08100ffa 0%, #08100fa6 30%, transparent 68%); } .af-world-frame { inset: 92px 18px 16px; } }
+@media (max-width: 480px) { .af-layout .af-topbar { height: 70px; padding-inline: 16px; } .af-layout .af-logo { font-size: 18px; letter-spacing: 1px; } .af-game-stage { padding: 132px 24px 28px; } .af-stage-heading h1 { font-size: 48px; letter-spacing: -2.5px; margin-block: 18px 14px; } .af-stage-subtitle { font-size: 12px; } .af-kicker { font-size: 9px; letter-spacing: 3px; } .af-mode-picker { gap: 6px; } .af-mode-option, .af-shop-button { gap: 9px; height: 86px; padding: 13px 10px; } .af-mode-copy strong { font-size: 12px; } .af-mode-copy > span { font-size: 9px; letter-spacing: 0; } .af-lobby-controls { padding-top: 75px; } .af-world { background-position: 61% center; } .af-setup form { padding: 0 18px 18px; } .af-setup-heading { margin-inline: -18px; padding-inline: 18px; } .af-sensitivity { gap: 6px; } }
+@media (prefers-reduced-motion: reduce) { .af-layout *, .af-layout *::before, .af-layout *::after { transition: none !important; animation: none !important; } }

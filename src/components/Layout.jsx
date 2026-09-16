@@ -4,11 +4,11 @@ import { setSoundVolume, getSoundVolume } from '../utils/sounds'
 import { CROSSHAIR_OPTIONS } from './Crosshair'
 import { useLanguage } from '../contexts/LanguageContext'
 
-function Layout({ children, isTestPage = false }) {
+function Layout({ children, isTestPage = false, isLobby = false }) {
   const { lang, t, setLang } = useLanguage()
 
   /* ── Theme ───────────────────────────────────────────────────── */
-  const [themeMode, setThemeMode] = useState(() => {
+  const [themeMode] = useState(() => {
     const saved = localStorage.getItem('themeMode')
     if (saved === 'light' || saved === 'dark' || saved === 'system') return saved
     return 'system'
@@ -27,6 +27,7 @@ function Layout({ children, isTestPage = false }) {
   }
   const theme = resolveTheme(themeMode)
   const dark = theme === 'dark'
+  const accent = isLobby ? '#f3834c' : '#22D3EE'
 
   /* ── Test fullscreen ─────────────────────────────────────────── */
   const [testActive, setTestActive] = useState(false)
@@ -116,20 +117,9 @@ function Layout({ children, isTestPage = false }) {
     label:     '#8A94A3',
   }
 
-  const themeOptions = [
-    {
-      key: 'light', label: lang === 'kr' ? '라이트' : 'Light',
-      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-14.07 1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2m-4.34-7.07-1.41 1.41M6.34 17.66 4.93 19.07"/></svg>,
-    },
-    {
-      key: 'dark', label: lang === 'kr' ? '다크' : 'Dark',
-      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
-    },
-    {
-      key: 'system', label: lang === 'kr' ? '시스템' : 'System',
-      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
-    },
-  ]
+  if (isLobby) Object.assign(C, dark
+    ? { card: '#1b1e1b', border: '#34382f', divider: '#34382f', muted: '#9b9e91', text: '#eeeee6', label: '#9b9e91' }
+    : { card: '#f3f2eb', border: '#c7cabe', divider: '#c7cabe', muted: '#63695b', text: '#242a22', label: '#63695b' })
 
   /* ── Shared row style ────────────────────────────────────────── */
   const SectionLabel = ({ children }) => (
@@ -143,7 +133,7 @@ function Layout({ children, isTestPage = false }) {
   )
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: C.bg, color: C.text }}>
+    <div className={isLobby ? 'af-layout' : undefined} data-theme={theme} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: C.bg, color: C.text }}>
       {/* Navbar */}
       <header
         className={`z-40 border-b backdrop-blur-md transition-[transform,opacity] duration-300 ease-in-out ${
@@ -158,37 +148,29 @@ function Layout({ children, isTestPage = false }) {
           } : {}),
         }}
       >
-        <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
+        <div className="af-topbar">
 
           {/* Logo + Program buttons */}
-          <div className="flex items-center gap-4">
-            <Link to="/" aria-label="AimForge home" className="inline-flex items-center gap-1">
-              <span className="text-lg font-black tracking-tight">
-                <span className="text-[#22D3EE]">Aim</span>
-                <span style={{ color: C.text }}>Forge</span>
-              </span>
-            </Link>
-
-            <Link
-              to="/drills"
-              className="inline-flex h-7 items-center justify-center rounded-md px-3 text-xs font-medium leading-none transition-all duration-150"
-              style={{ color: C.muted }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#22D3EE'; e.currentTarget.style.background = dark ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' }}
-            >
-              {lang === 'kr' ? '훈련 목록' : 'Drills'}
+          <div className="af-brand-position">
+            <Link to="/" aria-label="AimForge home" className="af-logo">
+              <svg className="af-logo-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="m3 27 11-22h6l-5 10h8l-3 6h-8l-3 6H3Z" fill="currentColor"/><path d="m23 13 6 14h-7l-3-7z" fill="currentColor"/></svg><span>AIMFORGE</span>
             </Link>
           </div>
 
           {/* Settings button */}
-          <div className="relative" ref={settingsRef}>
+          <div className="af-settings-position" ref={settingsRef}>
             <button
               type="button"
               onClick={() => setSettingsOpen((v) => !v)}
+              aria-label={lang === 'kr' ? '설정' : 'Settings'}
+              aria-expanded={settingsOpen}
+              aria-controls="game-settings"
               className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
               style={{
-                color: settingsOpen ? '#22D3EE' : C.muted,
-                background: settingsOpen ? (dark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)') : 'transparent',
+                color: settingsOpen ? accent : C.muted,
+                background: settingsOpen
+                  ? (isLobby ? 'rgba(243,131,76,0.12)' : (dark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)'))
+                  : 'transparent',
               }}
               onMouseEnter={e => { if (!settingsOpen) { e.currentTarget.style.color = C.hoverText; e.currentTarget.style.background = C.hover } }}
               onMouseLeave={e => { if (!settingsOpen) { e.currentTarget.style.color = C.muted; e.currentTarget.style.background = 'transparent' } }}
@@ -201,11 +183,20 @@ function Layout({ children, isTestPage = false }) {
 
             {/* Unified settings panel */}
             <div
+              id="game-settings"
+              inert={!settingsOpen ? '' : undefined}
               className={`absolute right-0 top-11 z-30 w-64 rounded-2xl border shadow-2xl p-4
                 transition-all duration-200 ease-out origin-top-right
                 ${settingsOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'}`}
               style={{ background: C.card, borderColor: C.border }}
             >
+
+              <div className="af-game-settings-title">
+                <span>{lang === 'kr' ? '게임 설정' : 'Game settings'}</span>
+                <small>PLAYER / LOCAL</small>
+              </div>
+
+              <Divider />
 
               {/* ① 언어 */}
               <SectionLabel>{lang === 'kr' ? '언어' : 'Language'}</SectionLabel>
@@ -217,8 +208,8 @@ function Layout({ children, isTestPage = false }) {
                     onClick={() => setLang(l)}
                     className="flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all"
                     style={{
-                      background: lang === l ? '#22D3EE' : 'transparent',
-                      borderColor: lang === l ? '#22D3EE' : C.border,
+                      background: lang === l ? accent : 'transparent',
+                      borderColor: lang === l ? accent : C.border,
                       color: lang === l ? '#071013' : C.muted,
                     }}
                   >
@@ -240,8 +231,10 @@ function Layout({ children, isTestPage = false }) {
                     title={opt.label}
                     className="flex-1 aspect-square rounded-xl flex items-center justify-center border transition-all"
                     style={{
-                      background: crosshair === opt.key ? (dark ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.1)') : 'transparent',
-                      borderColor: crosshair === opt.key ? '#22D3EE' : C.border,
+                      background: crosshair === opt.key
+                        ? (isLobby ? 'rgba(243,131,76,0.12)' : (dark ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.1)'))
+                        : 'transparent',
+                      borderColor: crosshair === opt.key ? accent : C.border,
                       padding: '6px',
                     }}
                   >
@@ -255,36 +248,13 @@ function Layout({ children, isTestPage = false }) {
 
               <Divider />
 
-              {/* ③ 테마 */}
-              <SectionLabel>{lang === 'kr' ? '테마' : 'Theme'}</SectionLabel>
-              <div className="flex gap-2">
-                {themeOptions.map((opt) => (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => setThemeMode(opt.key)}
-                    className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border text-[10px] font-semibold transition-all"
-                    style={{
-                      background: themeMode === opt.key ? '#22D3EE' : 'transparent',
-                      borderColor: themeMode === opt.key ? '#22D3EE' : C.border,
-                      color: themeMode === opt.key ? '#071013' : C.muted,
-                    }}
-                  >
-                    {opt.icon}
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              <Divider />
-
-              {/* ④ 효과음 */}
+              {/* ③ 효과음 */}
               <SectionLabel>{t.soundLabel}</SectionLabel>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setVolumeState(volume === 0 ? 0.7 : 0)}
-                  style={{ color: volume === 0 ? '#22D3EE' : C.muted, flexShrink: 0 }}
+                  style={{ color: volume === 0 ? accent : C.muted, flexShrink: 0 }}
                 >
                   {volume === 0 ? (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -301,7 +271,7 @@ function Layout({ children, isTestPage = false }) {
 
                 <div className="relative flex-1 h-5 flex items-center">
                   <div className="absolute w-full h-1 rounded-full" style={{ background: C.sliderBg }} />
-                  <div className="absolute h-1 rounded-full" style={{ width: `${volume * 100}%`, background: '#22D3EE' }} />
+                  <div className="absolute h-1 rounded-full" style={{ width: `${volume * 100}%`, background: accent }} />
                   <input
                     type="range" min="0" max="1" step="0.01" value={volume}
                     onChange={(e) => setVolumeState(parseFloat(e.target.value))}
@@ -309,11 +279,11 @@ function Layout({ children, isTestPage = false }) {
                   />
                   <div
                     className="absolute w-3.5 h-3.5 rounded-full shadow-md border-2 border-white pointer-events-none"
-                    style={{ left: `calc(${volume * 100}% - 7px)`, background: '#22D3EE' }}
+                    style={{ left: `calc(${volume * 100}% - 7px)`, background: accent }}
                   />
                 </div>
 
-                <span className="text-xs font-bold tabular-nums w-8 text-right" style={{ color: volume === 0 ? C.muted : '#22D3EE', flexShrink: 0 }}>
+                <span className="text-xs font-bold tabular-nums w-8 text-right" style={{ color: volume === 0 ? C.muted : accent, flexShrink: 0 }}>
                   {volume === 0 ? 'OFF' : `${Math.round(volume * 100)}%`}
                 </span>
               </div>
@@ -334,7 +304,7 @@ function Layout({ children, isTestPage = false }) {
       </main>
 
       {/* Footer */}
-      <footer
+      {!isLobby && <footer
         className={`border-t transition-[transform,opacity] duration-300 ease-in-out ${
           isTestPage ? 'fixed bottom-0 left-0 right-0 z-40' : ''
         }`}
@@ -348,9 +318,9 @@ function Layout({ children, isTestPage = false }) {
         }}
       >
         <div className="max-w-6xl mx-auto px-5 h-12 flex items-center justify-center">
-          <span className="text-xs" style={{ color: C.muted }}>© 2026 AimForge</span>
+          <span className="text-xs" style={{ color: C.muted }}>{isLobby ? '© 2026 AIMFORGE / EVERY SHOT COUNTS.' : '© 2026 AimForge'}</span>
         </div>
-      </footer>
+      </footer>}
     </div>
   )
 }
