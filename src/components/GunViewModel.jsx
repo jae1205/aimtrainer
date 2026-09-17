@@ -14,7 +14,7 @@ const _offset = new THREE.Vector3()
 const _localEuler = new THREE.Euler(0, 0, 0, 'YXZ')
 const _localQuat = new THREE.Quaternion()
 
-export default function GunViewModel({ active = true, shootTrigger = 0, onReady }) {
+export default function GunViewModel({ active = true, animationEnabled = false, shootTrigger = 0, onReady }) {
   const groupRef = useRef(null)
   const finishListenerRef = useRef(null)
 
@@ -32,21 +32,43 @@ export default function GunViewModel({ active = true, shootTrigger = 0, onReady 
     onReady?.()
   }, [scene, onReady])
 
-  // Play Idle animation on mount
+  // Gridshot uses the animated rig. Other modes keep the weapon in its authored grip pose.
   useEffect(() => {
     if (!actions) return
+    const grip = actions['Armature|Grip']
     const idle = actions['Armature|Idle']
+    const shoot = actions['Armature|Shoot']
+
+    Object.values(actions).forEach((action) => action?.stop())
+
+    if (!animationEnabled) {
+      if (grip) {
+        grip.reset()
+        grip.setLoop(THREE.LoopOnce, 1)
+        grip.clampWhenFinished = true
+        grip.play()
+      }
+      return
+    }
+
     if (idle) {
       idle.reset()
+      idle.enabled = true
+      idle.setEffectiveWeight(1)
+      idle.setEffectiveTimeScale(1)
       idle.setLoop(THREE.LoopRepeat, Infinity)
-      idle.fadeIn(0.2)
       idle.play()
     }
-  }, [actions])
+
+    return () => {
+      idle?.stop()
+      shoot?.stop()
+    }
+  }, [actions, animationEnabled])
 
   // Shoot animation on trigger — always restart immediately on each click
   useEffect(() => {
-    if (shootTrigger === 0) return
+    if (!animationEnabled || shootTrigger === 0) return
     if (!actions || !mixer) return
     const shoot = actions['Armature|Shoot']
     const idle = actions['Armature|Idle']
@@ -59,10 +81,14 @@ export default function GunViewModel({ active = true, shootTrigger = 0, onReady 
     }
 
     // Immediately restart shoot animation (handles rapid clicks)
+    idle?.fadeOut(0.025)
     shoot.stop()
     shoot.reset()
+    shoot.enabled = true
+    shoot.setEffectiveWeight(1)
+    shoot.setEffectiveTimeScale(1)
     shoot.setLoop(THREE.LoopOnce, 1)
-    shoot.clampWhenFinished = true
+    shoot.clampWhenFinished = false
     shoot.timeScale = 1
     shoot.play()
 
@@ -70,16 +96,27 @@ export default function GunViewModel({ active = true, shootTrigger = 0, onReady 
       if (e.action !== shoot) return
       mixer.removeEventListener('finished', finishListenerRef.current)
       finishListenerRef.current = null
+      shoot.stop()
       if (idle) {
         idle.reset()
+        idle.enabled = true
+        idle.setEffectiveWeight(1)
+        idle.setEffectiveTimeScale(1)
         idle.setLoop(THREE.LoopRepeat, Infinity)
-        idle.fadeIn(0.15)
+        idle.fadeIn(0.08)
         idle.play()
       }
     }
     finishListenerRef.current = onFinish
     mixer.addEventListener('finished', onFinish)
-  }, [shootTrigger, actions, mixer])
+  }, [animationEnabled, shootTrigger, actions, mixer])
+
+  useEffect(() => () => {
+    if (finishListenerRef.current && mixer) {
+      mixer.removeEventListener('finished', finishListenerRef.current)
+      finishListenerRef.current = null
+    }
+  }, [mixer])
 
   useFrame(({ camera }) => {
     if (!groupRef.current) return

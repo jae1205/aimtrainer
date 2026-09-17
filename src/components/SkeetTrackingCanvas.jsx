@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
@@ -206,6 +206,23 @@ function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
   return null
 }
 
+const GRIDSHOT_CELLS = [-1.9, -0.95, 0, 0.95, 1.9].flatMap((x) =>
+  [0.18, 1.22, 2.26].map((y) => [x, y, TARGET_WINDOW.targetZ]),
+)
+
+function getGridshotPosition(idx, groups = []) {
+  const occupied = groups
+    .filter(Boolean)
+    .map((group) => group.position)
+  const available = GRIDSHOT_CELLS.filter((cell) => !occupied.some((position) =>
+    Math.hypot(cell[0] - position.x, cell[1] - position.y) < 0.7,
+  ))
+  const pool = available.length ? available : GRIDSHOT_CELLS
+  const initialCell = GRIDSHOT_CELLS[(idx * 6 + 1) % GRIDSHOT_CELLS.length]
+  const cell = occupied.length ? pool[Math.floor(Math.random() * pool.length)] : initialCell
+  return [...cell]
+}
+
 
 const GREEN = new THREE.Color('#a6f47b')
 const YELLOW = new THREE.Color('#facc15')
@@ -231,6 +248,8 @@ function Scene({
   numBalls = 4,
   arcHeightCfg,
   statsRef,
+  trainingMode = 'skeet',
+  onShoot,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
   const sideWallHeight = CEIL_Y - FLOOR_Y + SEAM_OVERLAP
@@ -245,9 +264,14 @@ function Scene({
   const targets = useRef(null)
   const initialPositions = useRef(null)
   if (!targets.current) {
-    targets.current = Array.from({ length: NUM_BALLS_MAX },
-      (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg))
-    initialPositions.current = targets.current.map((target) => getWindowTargetPosition(target, ballRadius))
+    if (trainingMode === 'gridshot') {
+      initialPositions.current = Array.from({ length: NUM_BALLS_MAX }, (_, i) => getGridshotPosition(i))
+      targets.current = initialPositions.current.map((position) => ({ position }))
+    } else {
+      targets.current = Array.from({ length: NUM_BALLS_MAX },
+        (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg))
+      initialPositions.current = targets.current.map((target) => getWindowTargetPosition(target, ballRadius))
+    }
   }
   const targetBounds = useMemo(() => getWindowBounds(ballRadius), [ballRadius])
   const nextPosition = useRef([0, 0, 0])
@@ -257,11 +281,27 @@ function Scene({
   const hp = useRef(Array(NUM_BALLS_MAX).fill(1.0))
   const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
   const elapsed = useRef(0)
+  const pendingShots = useRef(0)
   const { camera, raycaster } = useThree()
 
+  useEffect(() => {
+    if (trainingMode !== 'gridshot') return undefined
+    const handleShot = (event) => {
+      if (event.button !== 0 || !active || !document.pointerLockElement) return
+      pendingShots.current++
+      onShoot?.()
+    }
+    window.addEventListener('mousedown', handleShot)
+    return () => window.removeEventListener('mousedown', handleShot)
+  }, [active, onShoot, trainingMode])
+
   const resetBall = useCallback((idx) => {
-    const nextTarget = makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
-    const nextPosition = getWindowTargetPosition(nextTarget, ballRadius)
+    const nextTarget = trainingMode === 'gridshot'
+      ? { position: getGridshotPosition(idx, groups.current.filter((_, groupIdx) => groupIdx !== idx)) }
+      : makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
+    const nextPosition = trainingMode === 'gridshot'
+      ? nextTarget.position
+      : getWindowTargetPosition(nextTarget, ballRadius)
     const visibleInOpening = isTargetInOpening(nextPosition, ballRadius)
     targets.current[idx] = nextTarget
     hp.current[idx] = 1.0
@@ -274,7 +314,7 @@ function Scene({
 
     const barGroup = barGroups.current[idx]
     if (barGroup) {
-      barGroup.visible = visibleInOpening
+      barGroup.visible = trainingMode !== 'gridshot' && visibleInOpening
       barGroup.quaternion.copy(camera.quaternion)
     }
 
@@ -284,13 +324,43 @@ function Scene({
       fill.position.x = 0
       fill.material.color.copy(GREEN)
     }
-  }, [arcHeightCfg, ballRadius, camera, numBalls])
+  }, [arcHeightCfg, ballRadius, camera, numBalls, trainingMode])
 
   useFrame((_, delta) => {
     if (!active) return
 
     const frameDelta = Math.min(delta, 0.05)
     elapsed.current += frameDelta
+
+    if (trainingMode === 'gridshot') {
+      if (!document.pointerLockElement || pendingShots.current <= 0) return
+      pendingShots.current--
+      camera.updateMatrixWorld()
+      raycaster.setFromCamera({ x: 0, y: 0 }, camera)
+      const visible = visibleSpheres.current
+      const contacts = intersections.current
+      visible.length = 0
+      contacts.length = 0
+      for (let i = 0; i < numBalls; i++) {
+        const sphere = spheres.current[i]
+        if (!sphere) continue
+        sphere.updateWorldMatrix(true, false)
+        visible.push(sphere)
+      }
+      raycaster.intersectObjects(visible, false, contacts)
+      if (statsRef) statsRef.current.activeFrames++
+      const hit = contacts[0]
+      if (hit) {
+        if (statsRef) {
+          statsRef.current.hitFrames++
+          statsRef.current.totalDamage++
+        }
+        playBeep(1)
+        onDestroy()
+        resetBall(hit.object.userData.targetIndex)
+      }
+      return
+    }
 
     for (let i = 0; i < numBalls; i++) {
       const target = targets.current[i]
@@ -459,7 +529,7 @@ function Scene({
             <group
               ref={(el) => { barGroups.current[i] = el }}
               position={[0, barY, ballRadius + 0.035]}
-              visible={isTargetInOpening(initialPosition, ballRadius)}
+              visible={trainingMode !== 'gridshot' && isTargetInOpening(initialPosition, ballRadius)}
             >
               <mesh position={[0, 0, 0.006]} renderOrder={21}>
                 <planeGeometry args={[barW, barH]} />
@@ -493,8 +563,12 @@ function SkeetTrackingCanvas({
   statsRef,
   onCanvasReady,
   onViewModelReady,
+  trainingMode = 'skeet',
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
+  const [shootTrigger, setShootTrigger] = useState(0)
+  const handleShoot = useCallback(() => setShootTrigger((current) => current + 1), [])
+  const gridshotActive = trainingMode === 'gridshot'
 
   return (
     <Canvas
@@ -523,9 +597,16 @@ function SkeetTrackingCanvas({
         numBalls={numBalls}
         arcHeightCfg={arcHeightCfg}
         statsRef={statsRef}
+        trainingMode={trainingMode}
+        onShoot={handleShoot}
       />
       <Suspense fallback={null}>
-        <GunViewModel active={viewModelActive} onReady={onViewModelReady} />
+        <GunViewModel
+          active={viewModelActive}
+          animationEnabled={gridshotActive}
+          shootTrigger={gridshotActive ? shootTrigger : 0}
+          onReady={onViewModelReady}
+        />
       </Suspense>
     </Canvas>
   )

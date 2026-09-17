@@ -20,6 +20,7 @@ function TrainingLoading() {
 function Test1() {
   const userSetup = JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
   const sensitivityMultiplier = userSetup.valorantSens
+  const trainingMode = localStorage.getItem('selectedTraining') || 'skeet'
 
   const [score, setScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(60)
@@ -62,8 +63,8 @@ function Test1() {
   }, [simActive])
 
   const handleComplete = useCallback((data) => {
-    localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier }))
-  }, [sensitivityMultiplier])
+    localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier, trainingMode }))
+  }, [sensitivityMultiplier, trainingMode])
   const handleStatsChange = useCallback(({ score: nextScore, timeLeft: nextTime }) => {
     setScore(nextScore)
     setTimeLeft(nextTime)
@@ -80,6 +81,7 @@ function Test1() {
             sensitivity={sensitivityMultiplier}
             theme="dark"
             onStatsChange={handleStatsChange}
+            trainingMode={trainingMode}
           />
         </Suspense>
 

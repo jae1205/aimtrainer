@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { LanguageProvider } from './contexts/LanguageContext'
 import Home from './pages/Home'
+import Shop from './pages/Shop'
 import DrillList from './pages/DrillList'
 import { preloadTest1 } from './routes/preloaders'
 import { scheduleAdsenseLoad } from './utils/adsense'
@@ -27,6 +28,7 @@ function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
             <Route path="/drills" element={<DrillList />} />
             <Route path="/test1" element={<Test1 />} />
             <Route path="*" element={<Navigate to="/" replace />} />

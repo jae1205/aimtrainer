@@ -30,7 +30,7 @@ function readSetup() {
   }
 }
 
-function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChange }) {
+function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChange, trainingMode = 'skeet' }) {
   const navigate = useNavigate()
   const { lang } = useLanguage()
   const [score, setScore] = useState(0)
@@ -54,6 +54,10 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
   const localSens = sensitivity
   const localDpi = readSetup().dpi || 800
   const bg = 'bg-[#0d1512]'
+  const isGridshot = trainingMode === 'gridshot'
+  const trainingName = lang === 'kr'
+    ? (isGridshot ? '그리드샷' : '스키트')
+    : (isGridshot ? 'Gridshot' : 'Skeet')
 
   const requestLock = useCallback(() => {
     if (!containerRef.current || isPointerLocked) return
@@ -171,6 +175,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
 
     const st = statsRef.current
     const kills = score
+    const shots = st.activeFrames
     const kps = kills / DURATION
     const accuracy = st.activeFrames > 0 ? (st.hitFrames / st.activeFrames) * 100 : 0
     const damage = st.totalDamage
@@ -190,15 +195,16 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
         ttkRating * 0.13
       ),
     )
-    const stats = { kills, kps, accuracy, damage, spm, avgTtk, totalScore }
+    const stats = { kills, shots, kps, accuracy, damage, spm, avgTtk, totalScore, trainingMode }
     setFinalStats(stats)
     onComplete?.(stats)
     setCompleted(true)
-  }, [started, isPreparing, countdown, timeLeft, score, onComplete])
+  }, [started, isPreparing, countdown, timeLeft, score, onComplete, trainingMode])
 
   return (
     <div
       ref={containerRef}
+      data-training-mode={trainingMode}
       className={`w-full h-full relative ${bg} ${isPointerLocked ? 'cursor-none' : 'cursor-default'}`}
       onClick={requestLock}
     >
@@ -206,20 +212,25 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
         <div className="af-game-overlay af-result-overlay">
           <div className="af-result-card">
             <div className="af-result-header">
-              <div><span>ROUND COMPLETE</span><h2>{lang === 'kr' ? '라운드 결과' : 'Round Result'}</h2></div>
-              <small>SOLO / 60 SEC</small>
+              <div><span>ROUND COMPLETE</span><h2>{trainingName} {lang === 'kr' ? '결과' : 'Result'}</h2></div>
+              <small>{trainingMode.toUpperCase()} / 60 SEC</small>
             </div>
             <div className="af-result-score">
               <span>{lang === 'kr' ? '총 점수' : 'Total Score'}</span>
               <div><strong>{finalStats.totalScore.toLocaleString()}</strong><small>/ {SCORE_MAX}</small></div>
             </div>
             <div className="af-result-grid">
-              {[
+              {(isGridshot ? [
+                { labelKr: '처치 타겟', labelEn: 'Targets', value: String(finalStats.kills), unit: 'HIT' },
+                { labelKr: '명중률', labelEn: 'Accuracy', value: finalStats.accuracy.toFixed(1), unit: '%' },
+                { labelKr: '발사 횟수', labelEn: 'Shots', value: String(finalStats.shots), unit: 'SHOT' },
+                { labelKr: '초당 명중', labelEn: 'Hits / Sec', value: finalStats.kps.toFixed(2), unit: 'H/S' },
+              ] : [
                 { labelKr: '처치 타겟', labelEn: 'Targets', value: String(finalStats.kills), unit: 'KILL' },
                 { labelKr: '정확도', labelEn: 'Accuracy', value: finalStats.accuracy.toFixed(1), unit: '%' },
                 { labelKr: '총 데미지', labelEn: 'Damage', value: finalStats.damage.toFixed(1), unit: 'HP' },
                 { labelKr: '평균 처치 시간', labelEn: 'Avg TTK', value: finalStats.avgTtk > 0 ? finalStats.avgTtk.toFixed(2) : '—', unit: finalStats.avgTtk > 0 ? 'SEC' : '' },
-              ].map(({ labelKr, labelEn, value, unit }) => (
+              ]).map(({ labelKr, labelEn, value, unit }) => (
                 <div key={labelEn}>
                   <span>{lang === 'kr' ? labelKr : labelEn}</span>
                   <p><strong>{value}</strong>{unit && <small>{unit}</small>}</p>
@@ -246,7 +257,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
         >
           <div className="af-preparing-panel">
             <span className="af-preparing-spinner" />
-            <div><strong>{lang === 'kr' ? '사격장 준비 중' : 'Preparing Range'}</strong><small>{lang === 'kr' ? '잠시만 기다려 주세요' : 'Please wait a moment'}</small></div>
+            <div><strong>{trainingName} {lang === 'kr' ? '준비 중' : 'Loading'}</strong><small>{lang === 'kr' ? '잠시만 기다려 주세요' : 'Please wait a moment'}</small></div>
           </div>
         </div>
       )}
@@ -279,13 +290,14 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
             onDestroy={handleDestroy}
             ballSpeed={BALL_SPEED_FIXED}
             ballHP={BALL_HP_FIXED}
-            ballSize={BALL_SIZE_FIXED}
+            ballSize={isGridshot ? 0.18 : BALL_SIZE_FIXED}
             ballColor={BALL_COLOR_FIXED}
-            numBalls={BALL_COUNT_FIXED}
+            numBalls={isGridshot ? 3 : BALL_COUNT_FIXED}
             arcHeightCfg={ARC_HEIGHT_FIXED}
             statsRef={statsRef}
             onCanvasReady={handleCanvasReady}
             onViewModelReady={handleViewModelReady}
+            trainingMode={trainingMode}
           />
         </Suspense>
       )}
