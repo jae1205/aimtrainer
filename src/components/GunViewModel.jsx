@@ -1,11 +1,12 @@
 /* @refresh reset */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import * as THREE from 'three'
 
-const MODEL_PATH = '/Fps%20Rig.glb'
+const MODEL_PATH = '/models/pistol-rig.glb?v=1'
 const VIEW_OFFSET = new THREE.Vector3(0, -0.94, -0.9)
+const BANANA_VIEW_OFFSET = new THREE.Vector3(0, -1.08, -1.0)
 const MESH_SCALE = 0.29
 const MESH_ROT = new THREE.Euler(0.1, Math.PI * 2.5, 0)
 const LOCAL_TILT = new THREE.Euler(-0.04, 0.06, -0.02, 'YXZ')
@@ -16,10 +17,14 @@ const _localQuat = new THREE.Quaternion()
 
 export default function GunViewModel({ active = true, animationEnabled = false, shootTrigger = 0, onReady }) {
   const groupRef = useRef(null)
-  const finishListenerRef = useRef(null)
+  const shotTimeRef = useRef(null)
+  const settleRef = useRef(0)
 
-  const { scene, animations } = useGLTF(MODEL_PATH)
-  const { actions, mixer } = useAnimations(animations, groupRef)
+  const [modelPath] = useState(() => localStorage.getItem('weaponSkin') === 'banana'
+    ? '/models/banana-rig.glb?v=3' : MODEL_PATH)
+  const { scene, animations } = useGLTF(modelPath)
+  const viewOffset = modelPath.startsWith('/models/banana-rig.glb') ? BANANA_VIEW_OFFSET : VIEW_OFFSET
+  const { actions } = useAnimations(animations, groupRef)
 
   // Apply scale/rotation directly to scene on first load
   useEffect(() => {
@@ -40,6 +45,8 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     const shoot = actions['Armature|Shoot']
 
     Object.values(actions).forEach((action) => action?.stop())
+    shotTimeRef.current = null
+    settleRef.current = 0
 
     if (!animationEnabled) {
       if (grip) {
@@ -69,65 +76,69 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
   // Shoot animation on trigger — always restart immediately on each click
   useEffect(() => {
     if (!animationEnabled || shootTrigger === 0) return
-    if (!actions || !mixer) return
+    if (!actions) return
     const shoot = actions['Armature|Shoot']
     const idle = actions['Armature|Idle']
     if (!shoot) return
 
-    // Remove any previous finish listener to avoid duplicates
-    if (finishListenerRef.current) {
-      mixer.removeEventListener('finished', finishListenerRef.current)
-      finishListenerRef.current = null
-    }
-
-    // Immediately restart shoot animation (handles rapid clicks)
-    idle?.fadeOut(0.025)
-    shoot.stop()
+    // Keep idle running underneath recoil. Never expose the skeleton's bind pose.
+    idle?.stopFading().setEffectiveWeight(0)
+    shoot.stopFading()
     shoot.reset()
     shoot.enabled = true
     shoot.setEffectiveWeight(1)
     shoot.setEffectiveTimeScale(1)
     shoot.setLoop(THREE.LoopOnce, 1)
-    shoot.clampWhenFinished = false
+    shoot.clampWhenFinished = true
     shoot.timeScale = 1
     shoot.play()
+    shotTimeRef.current = 0
+  }, [animationEnabled, shootTrigger, actions])
 
-    const onFinish = (e) => {
-      if (e.action !== shoot) return
-      mixer.removeEventListener('finished', finishListenerRef.current)
-      finishListenerRef.current = null
-      shoot.stop()
-      if (idle) {
-        idle.reset()
-        idle.enabled = true
-        idle.setEffectiveWeight(1)
-        idle.setEffectiveTimeScale(1)
-        idle.setLoop(THREE.LoopRepeat, Infinity)
-        idle.fadeIn(0.08)
-        idle.play()
-      }
+  // Run before drei's mixer update so both poses have complementary weights
+  // on every frame, including the exact frame the shot ends.
+  useFrame((_, delta) => {
+    if (shotTimeRef.current === null) {
+      settleRef.current = THREE.MathUtils.damp(settleRef.current, 0, 22, delta)
+      return
     }
-    finishListenerRef.current = onFinish
-    mixer.addEventListener('finished', onFinish)
-  }, [animationEnabled, shootTrigger, actions, mixer])
-
-  useEffect(() => () => {
-    if (finishListenerRef.current && mixer) {
-      mixer.removeEventListener('finished', finishListenerRef.current)
-      finishListenerRef.current = null
-    }
-  }, [mixer])
+    const shoot = actions['Armature|Shoot']
+    const idle = actions['Armature|Idle']
+    if (!shoot || !idle) return
+    const duration = shoot.getClip().duration
+    // Let the last authored pose settle into idle rather than cutting off
+    // its recovery at the clip boundary.
+    const blendStart = Math.max(0, duration - 0.2)
+    const recoveryEnd = duration + 0.18
+    shotTimeRef.current += delta
+    const t = THREE.MathUtils.clamp(
+      (shotTimeRef.current - blendStart) / (recoveryEnd - blendStart), 0, 1,
+    )
+    const idleWeight = t * t * t * (t * (t * 6 - 15) + 10)
+    // A small downward follow-through, then a soft return to the ready pose.
+    // Damping preserves continuity if another shot interrupts recovery.
+    const settleTarget = Math.sin(Math.PI * t) ** 2
+    settleRef.current = THREE.MathUtils.damp(settleRef.current, settleTarget, 26, delta)
+    idle.enabled = true
+    idle.setEffectiveWeight(idleWeight)
+    shoot.setEffectiveWeight(1 - idleWeight)
+    if (t === 1) shotTimeRef.current = null
+  }, -1)
 
   useFrame(({ camera }) => {
     if (!groupRef.current) return
 
     _offset
-      .copy(VIEW_OFFSET)
+      .copy(viewOffset)
+    _offset.y -= settleRef.current * 0.024
+    _offset.z += settleRef.current * 0.012
+    _offset
       .applyQuaternion(camera.quaternion)
       .add(camera.position)
     groupRef.current.position.copy(_offset)
 
     _localEuler.copy(LOCAL_TILT)
+    _localEuler.x -= settleRef.current * 0.012
     _localQuat.setFromEuler(_localEuler)
     groupRef.current.quaternion.multiplyQuaternions(camera.quaternion, _localQuat)
     groupRef.current.visible = active

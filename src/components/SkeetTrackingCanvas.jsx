@@ -218,7 +218,7 @@ function getGridshotPosition(idx, groups = []) {
     Math.hypot(cell[0] - position.x, cell[1] - position.y) < 0.7,
   ))
   const pool = available.length ? available : GRIDSHOT_CELLS
-  const initialCell = GRIDSHOT_CELLS[(idx * 6 + 1) % GRIDSHOT_CELLS.length]
+  const initialCell = GRIDSHOT_CELLS[(idx * 7 + 1) % GRIDSHOT_CELLS.length]
   const cell = occupied.length ? pool[Math.floor(Math.random() * pool.length)] : initialCell
   return [...cell]
 }
@@ -297,7 +297,8 @@ function Scene({
 
   const resetBall = useCallback((idx) => {
     const nextTarget = trainingMode === 'gridshot'
-      ? { position: getGridshotPosition(idx, groups.current.filter((_, groupIdx) => groupIdx !== idx)) }
+      // Include the hit target's old position so it cannot respawn in place.
+      ? { position: getGridshotPosition(idx, groups.current.slice(0, numBalls)) }
       : makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
     const nextPosition = trainingMode === 'gridshot'
       ? nextTarget.position

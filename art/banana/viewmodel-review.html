@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>Banana viewmodel QA</title>
+<style>body{margin:0;background:#303b35;color:#fff;font:14px system-ui}#root{height:100vh}nav{position:absolute;top:20px;left:20px;z-index:2;display:flex;gap:12px}button{padding:12px 18px}.cross{position:absolute;top:50%;left:50%;pointer-events:none;color:#a4b9ab}.label{position:absolute;bottom:20px;left:20px;pointer-events:none}</style></head>
+<body><div id="root"></div><div class="cross">+</div><div class="label">실제 GunViewModel · FOV 75° · 화면 하단 배치 검수</div>
+<script type="module">
+import React, {useState, Suspense} from 'react'
+import {createRoot} from 'react-dom/client'
+import {Canvas} from '@react-three/fiber'
+import GunViewModel from '/src/components/GunViewModel.jsx'
+import SkeetTrackingCanvas from '/src/components/SkeetTrackingCanvas.jsx'
+function Review(){
+ const [shot,setShot]=useState(0)
+ const [room,setRoom]=useState(false)
+ return React.createElement(React.Fragment,null,
+  React.createElement('nav',null,React.createElement('button',{onClick:()=>setShot(s=>s+1)},'발사'),React.createElement('button',{onClick:()=>{[0,120,240,360,480,800].forEach(t=>setTimeout(()=>setShot(s=>s+1),t))}},'연속 발사'),React.createElement('button',{onClick:()=>setRoom(!room)},'사격장 배경 전환')),
+  room ? React.createElement(SkeetTrackingCanvas,{theme:'dark',sensitivity:.4,dpi:800,active:false,viewModelActive:true,onDestroy:()=>{},ballSpeed:1,ballHP:.343,ballSize:.18,ballColor:'#ff681f',numBalls:3,arcHeightCfg:{spread:.9,arc:.38,drop:.62},trainingMode:'gridshot'}) : React.createElement(Canvas,{camera:{position:[0,0,0],fov:75,near:.05,far:60},dpr:[1,1.5],gl:{antialias:true}},
+   React.createElement('ambientLight',{intensity:1.5}),
+   React.createElement('directionalLight',{position:[-3,5,2],intensity:2}),
+   React.createElement(Suspense,{fallback:null},React.createElement(GunViewModel,{active:true,animationEnabled:true,shootTrigger:shot}))))
+}
+createRoot(document.getElementById('root')).render(React.createElement(Review))
+</script></body></html>

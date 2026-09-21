@@ -72,20 +72,26 @@ function Layout({ children, isTestPage = false, isLobby = false }) {
   /* ── Settings panel ──────────────────────────────────────────── */
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef(null)
+  const settingsCloseRef = useRef(null)
 
   const uiHidden = isTestPage && testActive && pointerLocked
   const showHeader = !uiHidden || settingsOpen
   const showFooter = !uiHidden
 
   useEffect(() => {
-    if (!settingsOpen) return
-    const handler = (e) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
-        setSettingsOpen(false)
-      }
+    const dialog = settingsRef.current
+    if (!dialog) return
+    if (!settingsOpen) {
+      if (dialog.open) dialog.close()
+      return
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+
+    if (document.pointerLockElement) document.exitPointerLock()
+    if (!dialog.open) dialog.showModal()
+    settingsCloseRef.current?.focus({ preventScroll: true })
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
   }, [settingsOpen])
 
   /* ── Color tokens ────────────────────────────────────────────── */
@@ -158,12 +164,13 @@ function Layout({ children, isTestPage = false, isLobby = false }) {
           </div>
 
           {/* Settings button */}
-          <div className="af-settings-position" ref={settingsRef}>
+          <div className="af-settings-position">
             <button
               type="button"
               onClick={() => setSettingsOpen((v) => !v)}
               aria-label={lang === 'kr' ? '설정' : 'Settings'}
               aria-expanded={settingsOpen}
+              aria-haspopup="dialog"
               aria-controls="game-settings"
               className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
               style={{
@@ -182,18 +189,38 @@ function Layout({ children, isTestPage = false, isLobby = false }) {
             </button>
 
             {/* Unified settings panel */}
-            <div
+            <dialog
+              ref={settingsRef}
               id="game-settings"
-              inert={!settingsOpen ? '' : undefined}
-              className={`absolute right-0 top-11 z-30 w-64 rounded-2xl border shadow-2xl p-4
-                transition-all duration-200 ease-out origin-top-right
-                ${settingsOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'}`}
-              style={{ background: C.card, borderColor: C.border }}
+              aria-labelledby="game-settings-title"
+              className="af-settings-dialog rounded-2xl border shadow-2xl p-4"
+              style={{ background: C.card, borderColor: C.border, color: C.text }}
+              onClose={() => setSettingsOpen(false)}
+              onClick={(event) => {
+                if (event.target !== event.currentTarget) return
+                const bounds = event.currentTarget.getBoundingClientRect()
+                if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+                  setSettingsOpen(false)
+                }
+              }}
             >
 
               <div className="af-game-settings-title">
-                <span>{lang === 'kr' ? '게임 설정' : 'Game settings'}</span>
-                <small>PLAYER / LOCAL</small>
+                <span id="game-settings-title">{lang === 'kr' ? '게임 설정' : 'Game settings'}</span>
+                <div className="af-settings-title-actions">
+                  <small>PLAYER / LOCAL</small>
+                  <button
+                    ref={settingsCloseRef}
+                    type="button"
+                    className="af-settings-close"
+                    aria-label={lang === 'kr' ? '설정 닫기' : 'Close settings'}
+                    onClick={() => setSettingsOpen(false)}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                      <path d="m6 6 12 12M18 6 6 18" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <Divider />
@@ -274,6 +301,7 @@ function Layout({ children, isTestPage = false, isLobby = false }) {
                   <div className="absolute h-1 rounded-full" style={{ width: `${volume * 100}%`, background: accent }} />
                   <input
                     type="range" min="0" max="1" step="0.01" value={volume}
+                    aria-label={t.soundLabel}
                     onChange={(e) => setVolumeState(parseFloat(e.target.value))}
                     className="absolute w-full h-full opacity-0 cursor-pointer"
                   />
@@ -288,7 +316,7 @@ function Layout({ children, isTestPage = false, isLobby = false }) {
                 </span>
               </div>
 
-            </div>
+            </dialog>
           </div>
 
         </div>
