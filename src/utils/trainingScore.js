@@ -18,7 +18,12 @@ export function calculateTrainingScore({
   accuracy = 0,
   damage = 0,
   avgTtk = 0,
+  trackingPoints = 0,
 }) {
+  if (trainingMode === 'tracking') {
+    return Math.round(Math.max(0, Math.min(SCORE_MAX, trackingPoints)))
+  }
+
   const targets = SCORE_TARGETS[trainingMode] || SCORE_TARGETS.skeet
   const killRating = clamp01(kills / targets.kills)
   const accuracyRating = clamp01(accuracy / 100)

@@ -8,6 +8,7 @@ import RangeInterior from './RangeInterior'
 import RangeStaticBatch from './RangeStaticBatch'
 import AimController from './AimController'
 import { createAimState, HIP_FOV } from '../utils/aim'
+import { createTrackingTarget, stepTrackingTarget } from '../utils/trackingTarget'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
@@ -30,6 +31,7 @@ const SEAM_OVERLAP = 0.36
 const SEAM_COVE_HEIGHT = 0.42
 const TARGET_TRAVEL_MARGIN = 0.95
 const TARGET_STAGGER = 0.16
+const TRACKING_SCORE_PER_SECOND = 1000 / 60
 const TARGET_WINDOW = {
   width: 5.2,
   height: 3.1,
@@ -226,7 +228,6 @@ function getGridshotPosition(idx, groups = []) {
   return [...cell]
 }
 
-
 const GREEN = new THREE.Color('#a6f47b')
 const YELLOW = new THREE.Color('#facc15')
 const RED_HP = new THREE.Color('#ef4444')
@@ -253,6 +254,7 @@ function Scene({
   statsRef,
   trainingMode = 'skeet',
   onShoot,
+  onTrackingScore,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
   const sideWallHeight = CEIL_Y - FLOOR_Y + SEAM_OVERLAP
@@ -270,6 +272,10 @@ function Scene({
     if (trainingMode === 'gridshot') {
       initialPositions.current = Array.from({ length: NUM_BALLS_MAX }, (_, i) => getGridshotPosition(i))
       targets.current = initialPositions.current.map((position) => ({ position }))
+    } else if (trainingMode === 'tracking') {
+      const target = createTrackingTarget(getWindowBounds(ballRadius))
+      targets.current = [target]
+      initialPositions.current = [[target.x, target.y, TARGET_WINDOW.targetZ]]
     } else {
       targets.current = Array.from({ length: NUM_BALLS_MAX },
         (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg))
@@ -285,6 +291,7 @@ function Scene({
   const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
   const elapsed = useRef(0)
   const pendingShots = useRef(0)
+  const lastTrackingScore = useRef(-1)
   const { camera, raycaster } = useThree()
 
   useEffect(() => {
@@ -318,7 +325,7 @@ function Scene({
 
     const barGroup = barGroups.current[idx]
     if (barGroup) {
-      barGroup.visible = trainingMode !== 'gridshot' && visibleInOpening
+      barGroup.visible = trainingMode === 'skeet' && visibleInOpening
       barGroup.quaternion.copy(camera.quaternion)
     }
 
@@ -366,6 +373,45 @@ function Scene({
       return
     }
 
+    if (trainingMode === 'tracking') {
+      const target = targets.current[0]
+      const group = groups.current[0]
+      if (!target || !group) return
+
+      stepTrackingTarget(target, frameDelta, targetBounds)
+      group.position.set(target.x, target.y, TARGET_WINDOW.targetZ)
+      if (!document.pointerLockElement) return
+
+      camera.updateMatrixWorld()
+      raycaster.setFromCamera({ x: 0, y: 0 }, camera)
+      const sphere = spheres.current[0]
+      if (!sphere) return
+      sphere.updateWorldMatrix(true, false)
+      const contacts = intersections.current
+      contacts.length = 0
+      raycaster.intersectObject(sphere, false, contacts)
+      sphere.material.emissiveIntensity = contacts.length > 0 ? 1.25 : 0.6
+
+      if (statsRef) {
+        const stats = statsRef.current
+        stats.activeFrames++
+        if (contacts.length > 0) {
+          stats.hitFrames++
+          stats.trackingSeconds += frameDelta
+          stats.currentTrackSeconds += frameDelta
+          stats.longestTrackSeconds = Math.max(stats.longestTrackSeconds, stats.currentTrackSeconds)
+          const nextScore = Math.min(1000, Math.floor(stats.trackingSeconds * TRACKING_SCORE_PER_SECOND))
+          if (nextScore !== lastTrackingScore.current) {
+            lastTrackingScore.current = nextScore
+            onTrackingScore?.(nextScore)
+          }
+        } else {
+          stats.currentTrackSeconds = 0
+        }
+      }
+      return
+    }
+
     for (let i = 0; i < numBalls; i++) {
       const target = targets.current[i]
       const group = groups.current[i]
@@ -381,7 +427,7 @@ function Scene({
       group.position.set(...getWindowTargetPosition(target, ballRadius, nextPosition.current, targetBounds))
       const visibleInOpening = isTargetInOpening(group.position, ballRadius)
       if (barGroup) {
-        barGroup.visible = visibleInOpening
+        barGroup.visible = trainingMode === 'skeet' && visibleInOpening
         barGroup.quaternion.copy(camera.quaternion)
       }
     }
@@ -533,7 +579,7 @@ function Scene({
             <group
               ref={(el) => { barGroups.current[i] = el }}
               position={[0, barY, ballRadius + 0.035]}
-              visible={trainingMode !== 'gridshot' && isTargetInOpening(initialPosition, ballRadius)}
+              visible={trainingMode === 'skeet' && isTargetInOpening(initialPosition, ballRadius)}
             >
               <mesh position={[0, 0, 0.006]} renderOrder={21}>
                 <planeGeometry args={[barW, barH]} />
@@ -568,6 +614,7 @@ function SkeetTrackingCanvas({
   onCanvasReady,
   onViewModelReady,
   trainingMode = 'skeet',
+  onTrackingScore,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
   const [shootTrigger, setShootTrigger] = useState(0)
@@ -605,6 +652,7 @@ function SkeetTrackingCanvas({
         statsRef={statsRef}
         trainingMode={trainingMode}
         onShoot={handleShoot}
+        onTrackingScore={onTrackingScore}
       />
       <Suspense fallback={null}>
         <GunViewModel

@@ -13,5 +13,7 @@ assert.equal(calculateTrainingScore({
 assert.ok(calculateTrainingScore({
   trainingMode: 'skeet', kills: 18, accuracy: 75, damage: 20, avgTtk: 1.5,
 }) >= 850, 'A strong skeet round should produce a strong result')
+assert.equal(calculateTrainingScore({ trainingMode: 'tracking', trackingPoints: 742 }), 742)
+assert.equal(calculateTrainingScore({ trainingMode: 'tracking', trackingPoints: 1200 }), SCORE_MAX)
 
 console.log({ status: 'PASS', oldEquivalent, skeetScore })

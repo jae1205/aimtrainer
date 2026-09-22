@@ -70,7 +70,8 @@ function Test1() {
     setTimeLeft(nextTime)
   }, [])
 
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const isTracking = trainingMode === 'tracking'
 
   return (
     <Layout isTestPage={true} isLobby={true}>
@@ -87,7 +88,7 @@ function Test1() {
 
         <div className={`af-game-hud ${simActive ? 'is-visible' : ''}`}>
           <div className="af-hud-item af-hud-fps"><span>FPS</span><strong>{fps}</strong></div>
-          <div className="af-hud-item"><span>{t.hudTargets}</span><strong>{score}</strong>{t.hudTargetUnit && <small>{t.hudTargetUnit}</small>}</div>
+          <div className="af-hud-item"><span>{isTracking ? (lang === 'kr' ? '추적 점수' : 'TRACK SCORE') : t.hudTargets}</span><strong>{score}</strong>{!isTracking && t.hudTargetUnit && <small>{t.hudTargetUnit}</small>}</div>
           <div className="af-hud-item af-hud-time"><span>{t.hudTimeLeft}</span><strong>{timeLeft}</strong><small>{t.hudTimeUnit}</small></div>
         </div>
       </div>

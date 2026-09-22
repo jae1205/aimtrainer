@@ -12,8 +12,8 @@ const COPY = {
     play: '플레이', shop: '상점', shopSubtitle: '장비와 스타일을 준비하세요.', preview: '스킨', soon: '준비 중', selected: '선택됨', modeLabel: '플레이 모드',
     round: '60초 · 입장 가능', ready: '입장 가능',
     setup: '감도 설정', setupDesc: '익숙한 마우스 설정으로 시작하세요.', dpi: '마우스 DPI', sens: '인게임 감도', close: '닫기', confirm: '준비 완료 · 입장',
-    trainingSelect: '훈련 선택', skeet: '스키트', gridshot: '그리드샷',
-    skeetDescription: '움직이는 타겟을 끝까지 추적하세요.', gridshotDescription: '나타나는 3개의 타겟을 빠르게 처치하세요.',
+    trainingSelect: '훈련 선택', skeet: '스키트', gridshot: '그리드샷', tracking: '트래킹',
+    skeetDescription: '움직이는 타겟을 끝까지 추적하세요.', gridshotDescription: '나타나는 3개의 타겟을 빠르게 처치하세요.', trackingDescription: '랜덤하게 움직이는 공을 최대한 오래 따라가세요.',
   },
   en: {
     titles: ['FIRING RANGE', 'SCORE MATCH', 'RANKED ARENA'],
@@ -22,8 +22,8 @@ const COPY = {
     play: 'PLAY', shop: 'STORE', shopSubtitle: 'Prepare your gear and style.', preview: 'SKINS', soon: 'Coming soon', selected: 'Selected', modeLabel: 'Game mode',
     round: '60 sec · Ready', ready: 'Ready to play',
     setup: 'SENSITIVITY', setupDesc: 'Start with your familiar mouse settings.', dpi: 'MOUSE DPI', sens: 'IN-GAME SENSITIVITY', close: 'Close', confirm: 'Ready · Enter range',
-    trainingSelect: 'SELECT TRAINING', skeet: 'SKEET', gridshot: 'GRIDSHOT',
-    skeetDescription: 'Track moving targets through their full path.', gridshotDescription: 'Eliminate three targets as quickly as possible.',
+    trainingSelect: 'SELECT TRAINING', skeet: 'SKEET', gridshot: 'GRIDSHOT', tracking: 'TRACKING',
+    skeetDescription: 'Track moving targets through their full path.', gridshotDescription: 'Eliminate three targets as quickly as possible.', trackingDescription: 'Stay on the randomly moving target for as long as possible.',
   },
 }
 
@@ -84,6 +84,19 @@ function TrainingSelectModal({ copy, onClose, onSelect }) {
       time: '60 SEC',
       description: copy.gridshotDescription,
       icon: <><circle cx="15" cy="15" r="6"/><circle cx="33" cy="15" r="6"/><circle cx="24" cy="33" r="6"/><path d="M15 12v6m-3-3h6M33 12v6m-3-3h6M24 30v6m-3-3h6"/></>,
+    },
+    {
+      id: 'tracking',
+      code: '03',
+      title: copy.tracking,
+      time: '60 SEC',
+      description: copy.trackingDescription,
+      icon: <>
+        <path d="M5 37c5-11 10-14 16-10 4 3 7 2 11-5" strokeDasharray="3 3" />
+        <circle cx="34" cy="18" r="7" />
+        <circle cx="34" cy="18" r="2" fill="currentColor" stroke="none" />
+        <path d="M34 6v5m0 14v5M22 18h5m14 0h5" />
+      </>,
     },
   ]
 

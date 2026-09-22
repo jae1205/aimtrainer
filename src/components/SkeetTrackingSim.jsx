@@ -16,6 +16,10 @@ const BALL_COLOR_FIXED = '#ff681f'
 const BALL_SIZE_FIXED = 0.1
 const BALL_COUNT_FIXED = 4
 const ARC_HEIGHT_FIXED = { spread: 0.9, arc: 0.38, drop: 0.62 }
+const createStats = () => ({
+  hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [],
+  trackingSeconds: 0, currentTrackSeconds: 0, longestTrackSeconds: 0,
+})
 function readSetup() {
   try {
     return JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
@@ -40,8 +44,9 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
   const [finalStats, setFinalStats] = useState(null)
   const containerRef = useRef(null)
   const roundStartedRef = useRef(false)
-  const statsRef = useRef({ hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [] })
+  const statsRef = useRef(createStats())
   const handleDestroy = useCallback(() => setScore((current) => current + 1), [])
+  const handleTrackingScore = useCallback((nextScore) => setScore(nextScore), [])
   const handleCanvasReady = useCallback(() => setCanvasReady(true), [])
   const handleViewModelReady = useCallback(() => setViewModelReady(true), [])
 
@@ -49,9 +54,10 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
   const localDpi = readSetup().dpi || 800
   const bg = 'bg-[#0d1512]'
   const isGridshot = trainingMode === 'gridshot'
+  const isTracking = trainingMode === 'tracking'
   const trainingName = lang === 'kr'
-    ? (isGridshot ? '그리드샷' : '스키트')
-    : (isGridshot ? 'Gridshot' : 'Skeet')
+    ? (isGridshot ? '그리드샷' : isTracking ? '트래킹' : '스키트')
+    : (isGridshot ? 'Gridshot' : isTracking ? 'Tracking' : 'Skeet')
 
   const requestLock = useCallback(() => {
     if (!containerRef.current || isPointerLocked) return
@@ -75,7 +81,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
 
   const startTraining = useCallback((e) => {
     e?.stopPropagation()
-    statsRef.current = { hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [] }
+    statsRef.current = createStats()
     setFinalStats(null)
     setCompleted(false)
     setStarted(true)
@@ -168,19 +174,25 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
     playComplete()
 
     const st = statsRef.current
-    const kills = score
+    const kills = isTracking ? 0 : score
     const shots = st.activeFrames
     const kps = kills / DURATION
     const accuracy = st.activeFrames > 0 ? (st.hitFrames / st.activeFrames) * 100 : 0
     const damage = st.totalDamage
     const spm = kills
     const avgTtk = st.ttks.length > 0 ? st.ttks.reduce((a, b) => a + b, 0) / st.ttks.length : 0
-    const totalScore = calculateTrainingScore({ trainingMode, kills, accuracy, damage, avgTtk })
-    const stats = { kills, shots, kps, accuracy, damage, spm, avgTtk, totalScore, trainingMode }
+    const trackingPoints = isTracking
+      ? Math.min(SCORE_MAX, Math.round(st.trackingSeconds * SCORE_MAX / DURATION))
+      : 0
+    const totalScore = calculateTrainingScore({ trainingMode, kills, accuracy, damage, avgTtk, trackingPoints })
+    const stats = {
+      kills, shots, kps, accuracy, damage, spm, avgTtk, totalScore, trainingMode,
+      trackingPoints, trackingSeconds: st.trackingSeconds, longestTrackSeconds: st.longestTrackSeconds,
+    }
     setFinalStats(stats)
     onComplete?.(stats)
     setCompleted(true)
-  }, [started, isPreparing, countdown, timeLeft, score, onComplete, trainingMode])
+  }, [started, isPreparing, countdown, timeLeft, score, onComplete, trainingMode, isTracking])
 
   return (
     <div
@@ -206,6 +218,11 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
                 { labelKr: '명중률', labelEn: 'Accuracy', value: finalStats.accuracy.toFixed(1), unit: '%' },
                 { labelKr: '발사 횟수', labelEn: 'Shots', value: String(finalStats.shots), unit: 'SHOT' },
                 { labelKr: '초당 명중', labelEn: 'Hits / Sec', value: finalStats.kps.toFixed(2), unit: 'H/S' },
+              ] : isTracking ? [
+                { labelKr: '추적 점수', labelEn: 'Track Score', value: String(finalStats.trackingPoints), unit: 'PTS' },
+                { labelKr: '추적 정확도', labelEn: 'Tracking Accuracy', value: finalStats.accuracy.toFixed(1), unit: '%' },
+                { labelKr: '총 추적 시간', labelEn: 'Time on Target', value: finalStats.trackingSeconds.toFixed(1), unit: 'SEC' },
+                { labelKr: '최장 연속 추적', labelEn: 'Longest Streak', value: finalStats.longestTrackSeconds.toFixed(2), unit: 'SEC' },
               ] : [
                 { labelKr: '처치 타겟', labelEn: 'Targets', value: String(finalStats.kills), unit: 'KILL' },
                 { labelKr: '정확도', labelEn: 'Accuracy', value: finalStats.accuracy.toFixed(1), unit: '%' },
@@ -269,11 +286,12 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
             active={!isPreparing && countdown === 0 && !completed && isPointerLocked}
             viewModelActive={!isPreparing && isPointerLocked && countdown === 0}
             onDestroy={handleDestroy}
+            onTrackingScore={handleTrackingScore}
             ballSpeed={BALL_SPEED_FIXED}
             ballHP={BALL_HP_FIXED}
-            ballSize={isGridshot ? 0.18 : BALL_SIZE_FIXED}
+            ballSize={isGridshot ? 0.18 : isTracking ? 0.16 : BALL_SIZE_FIXED}
             ballColor={BALL_COLOR_FIXED}
-            numBalls={isGridshot ? 3 : BALL_COUNT_FIXED}
+            numBalls={isGridshot ? 3 : isTracking ? 1 : BALL_COUNT_FIXED}
             arcHeightCfg={ARC_HEIGHT_FIXED}
             statsRef={statsRef}
             onCanvasReady={handleCanvasReady}
