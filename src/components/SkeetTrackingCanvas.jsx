@@ -6,12 +6,14 @@ import GunViewModel from './GunViewModel'
 import RangeFront from './RangeFront'
 import RangeInterior from './RangeInterior'
 import RangeStaticBatch from './RangeStaticBatch'
+import AimController from './AimController'
+import { createAimState, HIP_FOV } from '../utils/aim'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
 const PLAYER_START_Z = -3
 const PLAYER_START_POSITION = [0, PLAYER_EYE_Y, PLAYER_START_Z]
-const CAMERA_CONFIG = { position: PLAYER_START_POSITION, fov: 75, near: 0.05, far: 60 }
+const CAMERA_CONFIG = { position: PLAYER_START_POSITION, fov: HIP_FOV, near: 0.05, far: 60 }
 const PITCH_LIMIT = Math.PI / 2.2
 const NUM_BALLS_MAX = 6
 const BALL_RADIUS = 0.2
@@ -189,7 +191,8 @@ function PlayerController({ sensitivityMultiplier = 1, dpi = 800 }) {
   const handleMouseMove = useCallback((e) => {
     if (!document.pointerLockElement) return
 
-    const s = 0.07 * Math.PI / 180 * sensitivityMultiplier * (dpi / 800)
+    const zoomSensitivity = Math.tan(camera.fov * Math.PI / 360) / Math.tan(HIP_FOV * Math.PI / 360)
+    const s = 0.07 * Math.PI / 180 * sensitivityMultiplier * (dpi / 800) * zoomSensitivity
     rotation.current.y -= e.movementX * s
     rotation.current.x -= e.movementY * s
     rotation.current.x = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, rotation.current.x))
@@ -570,6 +573,7 @@ function SkeetTrackingCanvas({
   const [shootTrigger, setShootTrigger] = useState(0)
   const handleShoot = useCallback(() => setShootTrigger((current) => current + 1), [])
   const gridshotActive = trainingMode === 'gridshot'
+  const aimRef = useRef(createAimState())
 
   return (
     <Canvas
@@ -585,6 +589,7 @@ function SkeetTrackingCanvas({
     >
       <color attach="background" args={[room.background]} />
       <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
+      <AimController active={active && viewModelActive} aimRef={aimRef} />
       <Scene
         sensitivity={sensitivity}
         dpi={dpi}
@@ -606,6 +611,7 @@ function SkeetTrackingCanvas({
           active={viewModelActive}
           animationEnabled={gridshotActive}
           shootTrigger={gridshotActive ? shootTrigger : 0}
+          aimRef={aimRef}
           onReady={onViewModelReady}
         />
       </Suspense>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Crosshair from './Crosshair'
 import { useLanguage } from '../contexts/LanguageContext'
 import { playComplete } from '../utils/sounds'
+import { calculateTrainingScore, SCORE_MAX } from '../utils/trainingScore'
 
 const SkeetTrackingCanvas = lazy(() => import('./SkeetTrackingCanvas'))
 
@@ -15,13 +16,6 @@ const BALL_COLOR_FIXED = '#ff681f'
 const BALL_SIZE_FIXED = 0.1
 const BALL_COUNT_FIXED = 4
 const ARC_HEIGHT_FIXED = { spread: 0.9, arc: 0.38, drop: 0.62 }
-const SCORE_MAX = 1000
-const SCORE_TARGETS = { kills: 30, damage: 30, ttkFast: 0.45, ttkSlow: 2.2 }
-
-function clamp01(value) {
-  return Math.max(0, Math.min(1, value))
-}
-
 function readSetup() {
   try {
     return JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
@@ -181,20 +175,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
     const damage = st.totalDamage
     const spm = kills
     const avgTtk = st.ttks.length > 0 ? st.ttks.reduce((a, b) => a + b, 0) / st.ttks.length : 0
-    const killRating = clamp01(kills / SCORE_TARGETS.kills)
-    const accuracyRating = clamp01(accuracy / 100)
-    const damageRating = clamp01(damage / SCORE_TARGETS.damage)
-    const ttkRating = avgTtk > 0
-      ? clamp01((SCORE_TARGETS.ttkSlow - avgTtk) / (SCORE_TARGETS.ttkSlow - SCORE_TARGETS.ttkFast))
-      : 0
-    const totalScore = Math.round(
-      SCORE_MAX * (
-        killRating * 0.38 +
-        accuracyRating * 0.27 +
-        damageRating * 0.22 +
-        ttkRating * 0.13
-      ),
-    )
+    const totalScore = calculateTrainingScore({ trainingMode, kills, accuracy, damage, avgTtk })
     const stats = { kills, shots, kps, accuracy, damage, spm, avgTtk, totalScore, trainingMode }
     setFinalStats(stats)
     onComplete?.(stats)

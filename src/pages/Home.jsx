@@ -122,8 +122,13 @@ export default function Home() {
   const [activeMode, setActiveMode] = useState(0)
   const [shopPreview, setShopPreview] = useState(false)
   const modeTypes = ['solo', 'match', 'rank']
-  const handleModeEnter = (index) => {
+  const handleModePreview = (index) => {
+    if (index > 0) return
     setActiveMode(index)
+    setShopPreview(false)
+  }
+  const handleModeEnter = (index) => {
+    handleModePreview(index)
     localStorage.setItem('selectedGameMode', modeTypes[index])
     setShowTrainingSelect(true)
   }
@@ -154,14 +159,14 @@ export default function Home() {
         <div className="af-lobby-controls">
           <div className="af-mode-section">
             <div className="af-mode-picker" role="group" aria-label={c.modeLabel}>
-              {modeTypes.map((type, index) => <button key={type} className="af-mode-option" disabled={index > 0} onMouseEnter={() => setActiveMode(index)} onFocus={() => setActiveMode(index)} onClick={() => handleModeEnter(index)}>
+              {modeTypes.map((type, index) => <button key={type} className="af-mode-option" disabled={index > 0} onMouseEnter={() => handleModePreview(index)} onFocus={() => handleModePreview(index)} onClick={() => handleModeEnter(index)}>
                 <ModeIcon type={type} />
                 <span className="af-mode-copy"><strong>{c.modes[index]}</strong><span>{index === 0 ? '60 SEC' : c.soon}</span></span>
                 <span className={`af-mode-indicator ${index === 0 ? 'af-mode-enter' : ''}`} aria-hidden="true">{index === 0 ? '→' : <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"><rect x="3.5" y="7" width="9" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>}</span>
               </button>)}
               <button className="af-shop-button" type="button"
-                onMouseEnter={() => setShopPreview(true)} onMouseLeave={() => setShopPreview(false)}
-                onFocus={() => setShopPreview(true)} onBlur={() => setShopPreview(false)}
+                onMouseEnter={() => setShopPreview(true)}
+                onFocus={() => setShopPreview(true)}
                 onClick={() => navigate('/shop')}>
                 <ModeIcon type="shop" />
                 <span className="af-mode-copy"><strong>{c.shop}</strong><span>{c.preview}</span></span>

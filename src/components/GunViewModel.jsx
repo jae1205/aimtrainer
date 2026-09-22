@@ -1,12 +1,13 @@
 /* @refresh reset */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import * as THREE from 'three'
+import { DEFAULT_WEAPON, getEquippedWeapon, getWeaponSkin } from '../data/weaponSkins'
+import { createCylinderMechanism, resetCylinder, triggerCylinder, updateCylinder } from '../utils/revolverMechanics'
+import { applyAimPose, createAimPose } from '../utils/aim'
 
-const MODEL_PATH = '/models/pistol-rig.glb?v=1'
-const VIEW_OFFSET = new THREE.Vector3(0, -0.94, -0.9)
-const BANANA_VIEW_OFFSET = new THREE.Vector3(0, -1.08, -1.0)
+const MODEL_PATH = DEFAULT_WEAPON.model
 const MESH_SCALE = 0.29
 const MESH_ROT = new THREE.Euler(0.1, Math.PI * 2.5, 0)
 const LOCAL_TILT = new THREE.Euler(-0.04, 0.06, -0.02, 'YXZ')
@@ -15,27 +16,29 @@ const _offset = new THREE.Vector3()
 const _localEuler = new THREE.Euler(0, 0, 0, 'YXZ')
 const _localQuat = new THREE.Quaternion()
 
-export default function GunViewModel({ active = true, animationEnabled = false, shootTrigger = 0, onReady }) {
+export default function GunViewModel({ active = true, animationEnabled = false, shootTrigger = 0, onReady, aimRef, weaponId }) {
   const groupRef = useRef(null)
   const shotTimeRef = useRef(null)
   const settleRef = useRef(0)
 
-  const [modelPath] = useState(() => localStorage.getItem('weaponSkin') === 'banana'
-    ? '/models/banana-rig.glb?v=3' : MODEL_PATH)
-  const { scene, animations } = useGLTF(modelPath)
-  const viewOffset = modelPath.startsWith('/models/banana-rig.glb') ? BANANA_VIEW_OFFSET : VIEW_OFFSET
+  const [equippedWeapon] = useState(getEquippedWeapon)
+  const weapon = weaponId ? getWeaponSkin(weaponId) : equippedWeapon
+  const { scene, animations } = useGLTF(weapon.model)
   const { actions } = useAnimations(animations, groupRef)
+  const aimPose = useMemo(() => createAimPose(scene, animations), [scene, animations])
+  const cylinder = useMemo(() => weapon.id === 'revolver'
+    ? createCylinderMechanism(scene, animations) : null, [weapon.id, scene, animations])
 
   // Apply scale/rotation directly to scene on first load
   useEffect(() => {
     if (!scene) return
-    scene.scale.setScalar(MESH_SCALE)
+    scene.scale.setScalar(MESH_SCALE * (weapon.viewScale ?? 1))
     scene.rotation.copy(MESH_ROT)
     scene.traverse((obj) => {
       if (obj.isMesh) obj.frustumCulled = false
     })
     onReady?.()
-  }, [scene, onReady])
+  }, [scene, weapon.viewScale, onReady])
 
   // Gridshot uses the animated rig. Other modes keep the weapon in its authored grip pose.
   useEffect(() => {
@@ -47,6 +50,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     Object.values(actions).forEach((action) => action?.stop())
     shotTimeRef.current = null
     settleRef.current = 0
+    resetCylinder(cylinder)
 
     if (!animationEnabled) {
       if (grip) {
@@ -71,7 +75,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
       idle?.stop()
       shoot?.stop()
     }
-  }, [actions, animationEnabled])
+  }, [actions, animationEnabled, cylinder])
 
   // Shoot animation on trigger — always restart immediately on each click
   useEffect(() => {
@@ -93,7 +97,8 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     shoot.timeScale = 1
     shoot.play()
     shotTimeRef.current = 0
-  }, [animationEnabled, shootTrigger, actions])
+    triggerCylinder(cylinder)
+  }, [animationEnabled, shootTrigger, actions, cylinder])
 
   // Run before drei's mixer update so both poses have complementary weights
   // on every frame, including the exact frame the shot ends.
@@ -125,11 +130,17 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     if (t === 1) shotTimeRef.current = null
   }, -1)
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     if (!groupRef.current) return
 
+    // Registered after useAnimations' mixer callback, so the retained
+    // mechanical phase wins over idle blending without taking over rendering.
+    if (animationEnabled) updateCylinder(cylinder, delta)
+    // Independent Blender-authored parent bone: firing/idle cannot overwrite ADS.
+    applyAimPose(aimPose, aimRef?.current.progress ?? 0)
+
     _offset
-      .copy(viewOffset)
+      .fromArray(weapon.offset)
     _offset.y -= settleRef.current * 0.024
     _offset.z += settleRef.current * 0.012
     _offset

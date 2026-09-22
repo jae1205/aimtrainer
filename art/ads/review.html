@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>AIMFORGE 조준 검수</title>
+<style>body{margin:0;background:#303b35;color:#fff;font:14px system-ui}#root{height:100vh}nav{position:absolute;top:20px;left:20px;z-index:2;display:flex;gap:8px;flex-wrap:wrap}button{padding:10px 14px}button[aria-pressed=true]{background:#f3834c}.cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;color:#fff}.label{position:absolute;bottom:20px;left:20px;pointer-events:none;line-height:1.8}</style></head>
+<body><div id="root"></div><div class="cross">+</div><div class="label">실제 게임 총기 · Blender 조준 리그 검수<br><output id="aim-stats">불러오는 중</output></div>
+<script type="module">
+import React,{useRef,useState,Suspense} from 'react'
+import {createRoot} from 'react-dom/client'
+import {Canvas,useFrame} from '@react-three/fiber'
+import GunViewModel from '/src/components/GunViewModel.jsx'
+import {createAimState,HIP_FOV,stepAim,getAimFov} from '/src/utils/aim.js'
+const h=React.createElement
+function ReviewTransition({aimRef}){
+ useFrame(({camera},dt)=>{camera.fov=getAimFov(stepAim(aimRef.current,dt));camera.updateProjectionMatrix()},-2)
+ return null
+}
+function Readout({aimRef}){
+ const elapsed=useRef(0)
+ useFrame(({camera},dt)=>{elapsed.current+=dt;if(elapsed.current>.1){elapsed.current=0;document.getElementById('aim-stats').textContent=`조준 ${(aimRef.current.progress*100).toFixed(0)}% · 시야각 ${camera.fov.toFixed(2)}° · ${aimRef.current.active?'조준 유지':'기본 자세'}`}})
+ return null
+}
+function Review(){
+ const [id,setId]=useState('default'),[shot,setShot]=useState(0),[aimed,setAimed]=useState(false)
+ const aimRef=useRef(createAimState())
+ const aim=value=>{aimRef.current.active=value;setAimed(value)}
+ return h(React.Fragment,null,
+  h('nav',null,
+   ...[['default','기본 권총'],['revolver','리볼버'],['banana','바나나']].map(([value,label])=>h('button',{key:value,'aria-pressed':id===value,onClick:()=>setId(value)},label)),
+   h('button',{'aria-pressed':aimed,onClick:()=>aim(!aimed)},'조준 보기'),
+   h('button',{onClick:()=>setShot(s=>s+1)},'한 발 발사'),
+   h('button',{onClick:()=>[0,120,240,360,480,600].forEach(t=>setTimeout(()=>setShot(s=>s+1),t))},'6발 연속 발사'),
+   h('button',{onClick:()=>[true,false,true,false,true,false].forEach((v,i)=>setTimeout(()=>aim(v),i*100))},'빠른 조준 전환')),
+  h(Canvas,{camera:{position:[0,0,0],fov:HIP_FOV,near:.05,far:60},dpr:[1,1.5],gl:{antialias:true}},
+   h('color',{attach:'background',args:['#34443a']}),
+   h('ambientLight',{intensity:1.2}),h('directionalLight',{position:[-3,5,2],intensity:2}),
+   ...[-1,0,1].map(x=>h('mesh',{key:x,position:[x,.3,-8]},h('sphereGeometry',{args:[.18,32,24]}),h('meshStandardMaterial',{color:'#ff681f'}))),
+   h(ReviewTransition,{aimRef}),
+   h(Suspense,{fallback:null},h(GunViewModel,{key:id,weaponId:id,active:true,animationEnabled:true,shootTrigger:shot,aimRef})),
+   h(Readout,{aimRef})))
+}
+createRoot(document.getElementById('root')).render(h(Review))
+</script></body></html>

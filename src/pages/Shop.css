@@ -1,20 +1,25 @@
 .af-store { min-height: 100svh; position: relative; isolation: isolate; overflow: hidden; color: #f0f1e9; background: #0d1210; }
-.af-skin-card { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; padding: 24px; }
-.af-skin-preview { height: 310px; flex: 1 1 280px; background: radial-gradient(ellipse, #384039, #141b17); border-radius: 8px; overflow: hidden; }
-.af-skin-details { flex: 1 1 220px; padding: 20px; }
+.af-skin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: rgba(214, 228, 216, .12); }
+.af-skin-card { display: flex; flex-direction: column; min-width: 0; gap: 18px; padding: 20px; background: #0d1511; }
+.af-skin-preview { height: 210px; background: radial-gradient(ellipse, #384039, #141b17); border-radius: 8px; overflow: hidden; }
+.af-skin-details { display: flex; flex: 1; flex-direction: column; }
 .af-skin-details > span { color: #d6bd67; font-size: 11px; letter-spacing: 3px; }
-.af-skin-details h2 { font-size: 32px; margin: 12px 0; }
+.af-skin-details h2 { font-size: clamp(20px, 2vw, 26px); margin: 10px 0; }
 .af-skin-details p, .af-skin-details small { color: #aeb8b0; }
-.af-skin-details button { display: block; width: 100%; max-width: 320px; padding: 16px; margin: 28px 0 12px; border: 1px solid #d6bd67; background: #d6bd67; color: #141b17; cursor: pointer; font: inherit; font-weight: 700; }
+.af-skin-details p { margin: 0 0 22px; font-size: 13px; }
+.af-skin-details small { min-height: 18px; font-size: 11px; }
+.af-skin-details button { display: block; width: 100%; padding: 14px; margin: auto 0 10px; border: 1px solid #d6bd67; background: #d6bd67; color: #141b17; cursor: pointer; font: inherit; font-weight: 700; }
 .af-skin-details button[aria-pressed="true"] { background: transparent; color: #e6cf82; }
+.af-skin-details button:disabled { cursor: default; }
+.af-skin-details button:not(:disabled):hover { background: #e6cf82; }
 .af-skin-details button:focus-visible { outline: 2px solid white; outline-offset: 4px; }
 .af-store-world { position: absolute; inset: 0; z-index: -2; background: #111713 url('/aimforge-shop-hover-v1.png') center / cover no-repeat; transform: scale(1.015); animation: af-store-arrive .8s ease-out both; }
 .af-store-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(7, 12, 10, .96) 0%, rgba(8, 14, 11, .86) 34%, rgba(8, 13, 11, .26) 70%, rgba(6, 10, 8, .38) 100%), linear-gradient(0deg, rgba(5, 9, 7, .97) 0%, rgba(7, 12, 10, .62) 28%, transparent 65%); }
-.af-store-shell { width: min(1280px, 100%); min-height: 100svh; margin: auto; padding: clamp(150px, 20vh, 205px) clamp(28px, 6vw, 84px) 52px; display: flex; flex-direction: column; }
+.af-store-shell { width: min(1280px, 100%); min-height: 100svh; margin: auto; padding: clamp(112px, 15vh, 150px) clamp(28px, 6vw, 84px) 40px; display: flex; flex-direction: column; }
 .af-store-heading { width: min(620px, 100%); }
-.af-store-heading h1 { margin: 0 0 14px; font-size: clamp(46px, 5vw, 70px); font-weight: 900; line-height: 1; letter-spacing: -4px; }
+.af-store-heading h1 { margin: 0 0 14px; font-size: clamp(40px, 4.5vw, 58px); font-weight: 900; line-height: 1; letter-spacing: -3px; }
 .af-store-heading p { color: #aeb8b0; font-size: 14px; }
-.af-store-catalog { margin-top: clamp(30px, 5vh, 50px); border: 1px solid rgba(214, 228, 216, .12); background: rgba(8, 14, 11, .88); box-shadow: 0 24px 70px rgba(0, 0, 0, .28); backdrop-filter: blur(8px); }
+.af-store-catalog { margin-top: 28px; border: 1px solid rgba(214, 228, 216, .12); background: rgba(8, 14, 11, .88); box-shadow: 0 24px 70px rgba(0, 0, 0, .28); backdrop-filter: blur(8px); }
 .af-store-catalog-head { min-height: 46px; padding: 0 20px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid rgba(214, 228, 216, .09); }
 .af-store-count { color: #89948c; font-size: 10px; font-weight: 700; }
 .af-store-empty { min-height: 230px; padding: clamp(28px, 5vw, 52px); display: flex; align-items: center; justify-content: center; gap: 25px; }
@@ -25,3 +30,5 @@
 @keyframes af-store-arrive { from { opacity: .5; transform: scale(1.04); } to { opacity: 1; transform: scale(1.015); } }
 @media (max-width: 700px) { .af-store-shell { padding: 130px 22px 25px; } .af-store-heading h1 { font-size: 44px; letter-spacing: -2.5px; } .af-store-catalog-head { padding-inline: 15px; } .af-store-empty { min-height: 230px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 19px; } }
 @media (prefers-reduced-motion: reduce) { .af-store-world { animation: none; } }
+@media (max-width: 1000px) { .af-skin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .af-skin-grid { grid-template-columns: minmax(0, 1fr); } .af-skin-preview { height: 230px; } }

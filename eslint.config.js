@@ -50,4 +50,15 @@ export default [
       'react/no-unknown-property': 'off',
     },
   },
+  {
+    files: ['art/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        Event: 'readonly',
+        EventTarget: 'readonly',
+        ProgressEvent: 'writable',
+      },
+    },
+  },
 ]

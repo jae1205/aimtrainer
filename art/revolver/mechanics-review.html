@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>Revolver mechanics QA</title>
+<style>body{margin:0;background:#303b35;color:#fff;font:14px system-ui}#root{height:100vh}nav{position:absolute;top:20px;left:20px;z-index:2;display:flex;gap:12px}button{padding:12px 18px}.cross{position:absolute;top:50%;left:50%;pointer-events:none;color:#a4b9ab}.label{position:absolute;bottom:20px;left:20px;pointer-events:none;line-height:1.8}</style></head>
+<body><div id="root"></div><div class="cross">+</div><div class="label">실제 게임 컴포넌트 · 리볼버 동작 검수<br><output id="mechanic-stats" aria-live="polite">모델 로딩 중</output></div>
+<script type="module">
+import React,{useState,useMemo,useRef,Suspense} from 'react'
+import {createRoot} from 'react-dom/client'
+import {Canvas,useFrame} from '@react-three/fiber'
+import {useGLTF} from '@react-three/drei'
+import * as T from 'three'
+import GunViewModel from '/src/components/GunViewModel.jsx'
+import {getEquippedWeapon} from '/src/data/weaponSkins.js'
+import {createCylinderMechanism} from '/src/utils/revolverMechanics.js'
+function Probe(){
+ const {scene,animations}=useGLTF(getEquippedWeapon().model)
+ const c=useMemo(()=>createCylinderMechanism(scene,animations),[scene,animations])
+ const state=useRef({previous:0,total:0,reversed:0,hammer:0,elapsed:0,q:new T.Quaternion()})
+ const hammer=scene.getObjectByName('Hammer')
+ const grip=animations.find(a=>a.name==='Armature|Grip')?.tracks.find(t=>t.name==='Hammer.quaternion')
+ const hammerRest=useMemo(()=>grip?new T.Quaternion().fromArray(grip.values):null,[grip])
+ // Mounted after GunViewModel: observe the final rendered bone transforms.
+ useFrame((_,delta)=>{
+  if(!c||!hammerRest)return
+  const s=state.current;s.q.copy(c.rest).invert().multiply(c.bone.quaternion).normalize()
+  const raw=2*Math.atan2(s.q.x*c.axis.x+s.q.y*c.axis.y+s.q.z*c.axis.z,s.q.w)
+  const step=T.MathUtils.euclideanModulo(raw-s.previous+Math.PI,2*Math.PI)-Math.PI
+  if(step<-.003)s.reversed++
+  s.total+=step;s.previous=raw;s.hammer=Math.max(s.hammer,hammerRest.angleTo(hammer.quaternion));s.elapsed+=delta
+  if(s.elapsed>.1){s.elapsed=0;document.getElementById('mechanic-stats').textContent=`실린더 누적 ${T.MathUtils.radToDeg(s.total).toFixed(1)}° · 역회전 ${s.reversed}프레임 · 해머 이동 ${T.MathUtils.radToDeg(s.hammer).toFixed(1)}°`}
+ })
+ return null
+}
+function Review(){
+ const [shot,setShot]=useState(0)
+ return React.createElement(React.Fragment,null,
+  React.createElement('nav',null,
+   React.createElement('button',{onClick:()=>setShot(s=>s+1)},'한 발 발사'),
+   React.createElement('button',{onClick:()=>[0,120,240,360,480,600].forEach(t=>setTimeout(()=>setShot(s=>s+1),t))},'6발 연속 발사')),
+  React.createElement(Canvas,{camera:{position:[0,0,0],fov:75,near:.05,far:60},dpr:[1,1.5],gl:{antialias:true}},
+   React.createElement('ambientLight',{intensity:1.5}),
+   React.createElement('directionalLight',{position:[-3,5,2],intensity:2}),
+   React.createElement(Suspense,{fallback:null},
+    React.createElement(GunViewModel,{active:true,animationEnabled:true,shootTrigger:shot}),
+    React.createElement(Probe))))
+}
+createRoot(document.getElementById('root')).render(React.createElement(Review))
+</script></body></html>

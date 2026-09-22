@@ -17,8 +17,6 @@
 .af-world-range { background-image: url('/aimforge-lobby-concept-01.png'); }
 .af-world-shop { background-image: url('/aimforge-shop-hover-v1.png'); opacity: 0; transform: scale(1.012); transition: opacity .35s ease, transform .7s ease; }
 .af-world-shop.is-visible { opacity: 1; transform: scale(1); }
-.af-lobby:has(.af-shop-button:hover) .af-world-shop,
-.af-lobby:has(.af-shop-button:focus-visible) .af-world-shop { opacity: 1; transform: scale(1); }
 .af-world-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #07110ef0 0%, #08120fc7 19%, #09141045 46%, transparent 72%), linear-gradient(0deg, #07100ff7 0%, #08110fbd 19%, transparent 48%, #080e1240 100%); }
 .af-world-frame { position: absolute; inset: 102px 35px 29px; border: 1px solid #d3e0c70d; clip-path: polygon(0 0, 25px 0, 25px 1px, calc(100% - 25px) 1px, calc(100% - 25px) 0, 100% 0, 100% 100%, 0 100%); }
 .af-game-stage { min-height: 100svh; max-width: 1800px; margin: auto; padding: clamp(154px, 25vh, 280px) 6vw 54px; display: flex; flex-direction: column; position: relative; }
