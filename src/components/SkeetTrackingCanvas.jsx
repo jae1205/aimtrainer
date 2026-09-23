@@ -37,6 +37,7 @@ const SEAM_COVE_HEIGHT = 0.42
 const TARGET_TRAVEL_MARGIN = 0.95
 const TARGET_STAGGER = 0.16
 const TRACKING_SCORE_PER_SECOND = 1000 / 60
+const TRACKING_BEEP_INTERVAL = 0.14
 const TARGET_WINDOW = {
   width: 5.2,
   height: 3.1,
@@ -308,10 +309,15 @@ function Scene({
   const elapsed = useRef(0)
   const pendingShots = useRef(0)
   const lastTrackingScore = useRef(-1)
+  const lastTrackingBeep = useRef(-Infinity)
   const headCenter = useRef(new THREE.Vector3())
   const bodyHitBox = useRef(new THREE.Box3())
   const hitPoint = useRef(new THREE.Vector3())
   const { camera, raycaster } = useThree()
+
+  useEffect(() => {
+    if (!active) lastTrackingBeep.current = -Infinity
+  }, [active])
 
   useEffect(() => {
     if (trainingMode !== 'gridshot' && trainingMode !== 'switching') return undefined
@@ -496,7 +502,10 @@ function Scene({
 
       stepTrackingTarget(target, frameDelta, targetBounds)
       group.position.set(target.x, target.y, TARGET_WINDOW.targetZ)
-      if (!document.pointerLockElement) return
+      if (!document.pointerLockElement) {
+        lastTrackingBeep.current = -Infinity
+        return
+      }
 
       camera.updateMatrixWorld()
       raycaster.setFromCamera(AIM_POINT, camera)
@@ -504,6 +513,14 @@ function Scene({
       if (!sphere) return
       const isHit = rayHitsSphere(raycaster.ray, group.position, ballRadius)
       sphere.material.emissiveIntensity = isHit ? 1.25 : 0.6
+      if (isHit) {
+        if (elapsed.current - lastTrackingBeep.current >= TRACKING_BEEP_INTERVAL) {
+          playBeep(0.5)
+          lastTrackingBeep.current = elapsed.current
+        }
+      } else {
+        lastTrackingBeep.current = -Infinity
+      }
 
       if (statsRef) {
         const stats = statsRef.current
