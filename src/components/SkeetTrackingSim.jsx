@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Crosshair from './Crosshair'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -20,6 +20,28 @@ const createStats = () => ({
   hitFrames: 0, activeFrames: 0, totalDamage: 0, ttks: [],
   trackingSeconds: 0, currentTrackSeconds: 0, longestTrackSeconds: 0,
 })
+function createScoreStore() {
+  let value = 0
+  const listeners = new Set()
+  return {
+    getSnapshot: () => value,
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+    set: (nextValue) => {
+      if (nextValue === value) return
+      value = nextValue
+      listeners.forEach((listener) => listener())
+    },
+  }
+}
+
+const ScoreValue = memo(function ScoreValue({ store }) {
+  const score = useSyncExternalStore(store.subscribe, store.getSnapshot)
+  return <strong>{score}</strong>
+})
+
 function readSetup() {
   try {
     return JSON.parse(localStorage.getItem('userSetup') || '{"dpi":800,"valorantSens":0.5,"eDPI":400}')
@@ -28,10 +50,37 @@ function readSetup() {
   }
 }
 
-function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChange, trainingMode = 'skeet' }) {
+const FpsCounter = memo(function FpsCounter({ active }) {
+  const [fps, setFps] = useState(0)
+  useEffect(() => {
+    if (!active) {
+      setFps(0)
+      return undefined
+    }
+
+    let frameCount = 0
+    let lastTime = performance.now()
+    let frameId
+    const loop = () => {
+      frameCount++
+      const now = performance.now()
+      if (now - lastTime >= 500) {
+        setFps(Math.round(frameCount * 1000 / (now - lastTime)))
+        frameCount = 0
+        lastTime = now
+      }
+      frameId = requestAnimationFrame(loop)
+    }
+    frameId = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(frameId)
+  }, [active])
+  return <strong>{active ? fps : '—'}</strong>
+})
+
+function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', trainingMode = 'skeet' }) {
   const navigate = useNavigate()
-  const { lang } = useLanguage()
-  const [score, setScore] = useState(0)
+  const { lang, t } = useLanguage()
+  const [scoreStore] = useState(createScoreStore)
   const [timeLeft, setTimeLeft] = useState(DURATION)
   const [started, setStarted] = useState(true)
   const [countdown, setCountdown] = useState(0)
@@ -45,8 +94,8 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
   const containerRef = useRef(null)
   const roundStartedRef = useRef(false)
   const statsRef = useRef(createStats())
-  const handleDestroy = useCallback(() => setScore((current) => current + 1), [])
-  const handleTrackingScore = useCallback((nextScore) => setScore(nextScore), [])
+  const handleDestroy = useCallback(() => scoreStore.set(scoreStore.getSnapshot() + 1), [scoreStore])
+  const handleTrackingScore = useCallback((nextScore) => scoreStore.set(nextScore), [scoreStore])
   const handleCanvasReady = useCallback(() => setCanvasReady(true), [])
   const handleViewModelReady = useCallback(() => setViewModelReady(true), [])
 
@@ -86,7 +135,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
     setCompleted(false)
     setStarted(true)
     setCountdown(0)
-    setScore(0)
+    scoreStore.set(0)
     setTimeLeft(DURATION)
     setIsPreparing(true)
     setCanvasEnabled(false)
@@ -94,11 +143,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
     setViewModelReady(false)
     roundStartedRef.current = false
     requestLock()
-  }, [requestLock])
-
-  useEffect(() => {
-    onStatsChange?.({ score, timeLeft })
-  }, [score, timeLeft, onStatsChange])
+  }, [requestLock, scoreStore])
 
   useEffect(() => {
     const handler = () => setIsPointerLocked(!!document.pointerLockElement)
@@ -174,7 +219,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
     playComplete()
 
     const st = statsRef.current
-    const kills = isTracking ? 0 : score
+    const kills = isTracking ? 0 : scoreStore.getSnapshot()
     const shots = st.activeFrames
     const kps = kills / DURATION
     const accuracy = st.activeFrames > 0 ? (st.hitFrames / st.activeFrames) * 100 : 0
@@ -192,7 +237,7 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
     setFinalStats(stats)
     onComplete?.(stats)
     setCompleted(true)
-  }, [started, isPreparing, countdown, timeLeft, score, onComplete, trainingMode, isTracking])
+  }, [started, isPreparing, countdown, timeLeft, scoreStore, onComplete, trainingMode, isTracking])
 
   return (
     <div
@@ -201,6 +246,11 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', onStatsChan
       className={`w-full h-full relative ${bg} ${isPointerLocked ? 'cursor-none' : 'cursor-default'}`}
       onClick={requestLock}
     >
+      <div className={`af-game-hud ${started && !isPreparing && !completed ? 'is-visible' : ''}`}>
+        <div className="af-hud-item af-hud-fps"><span>FPS</span><FpsCounter active={started && !isPreparing && !completed && isPointerLocked && countdown === 0} /></div>
+        <div className="af-hud-item"><span>{isTracking ? (lang === 'kr' ? '추적 점수' : 'TRACK SCORE') : t.hudTargets}</span><ScoreValue store={scoreStore} />{!isTracking && t.hudTargetUnit && <small>{t.hudTargetUnit}</small>}</div>
+        <div className="af-hud-item af-hud-time"><span>{t.hudTimeLeft}</span><strong>{timeLeft}</strong><small>{t.hudTimeUnit}</small></div>
+      </div>
       {completed && finalStats && (
         <div className="af-game-overlay af-result-overlay">
           <div className="af-result-card">

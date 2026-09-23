@@ -3,16 +3,16 @@
 <style>body{margin:0;background:#303b35;color:#fff;font:14px system-ui}#root{height:100vh}nav{position:absolute;top:20px;left:20px;z-index:2;display:flex;gap:12px}button{padding:12px 18px}.cross{position:absolute;top:50%;left:50%;pointer-events:none;color:#a4b9ab}.label{position:absolute;bottom:20px;left:20px;pointer-events:none;line-height:1.8}</style></head>
 <body><div id="root"></div><div class="cross">+</div><div class="label">실제 게임 컴포넌트 · 리볼버 동작 검수<br><output id="mechanic-stats" aria-live="polite">모델 로딩 중</output></div>
 <script type="module">
-import React,{useState,useMemo,useRef,Suspense} from 'react'
+import React,{useMemo,useRef,Suspense} from 'react'
 import {createRoot} from 'react-dom/client'
 import {Canvas,useFrame} from '@react-three/fiber'
 import {useGLTF} from '@react-three/drei'
 import * as T from 'three'
 import GunViewModel from '/src/components/GunViewModel.jsx'
-import {getEquippedWeapon} from '/src/data/weaponSkins.js'
+import {getWeaponSkin} from '/src/data/weaponSkins.js'
 import {createCylinderMechanism} from '/src/utils/revolverMechanics.js'
 function Probe(){
- const {scene,animations}=useGLTF(getEquippedWeapon().model)
+ const {scene,animations}=useGLTF(getWeaponSkin('revolver').model)
  const c=useMemo(()=>createCylinderMechanism(scene,animations),[scene,animations])
  const state=useRef({previous:0,total:0,reversed:0,hammer:0,elapsed:0,q:new T.Quaternion()})
  const hammer=scene.getObjectByName('Hammer')
@@ -30,17 +30,31 @@ function Probe(){
  })
  return null
 }
+function FrameWake({framesLeft}){
+ useFrame(({invalidate})=>{
+  if(framesLeft.current>0){framesLeft.current--;invalidate()}
+ })
+ return null
+}
 function Review(){
- const [shot,setShot]=useState(0)
+ const shotSignalRef=useRef(0)
+ const framesLeft=useRef(0)
+ const invalidateRef=useRef(null)
+ const fire=()=>{
+  shotSignalRef.current++
+  framesLeft.current=75
+  invalidateRef.current?.()
+ }
  return React.createElement(React.Fragment,null,
   React.createElement('nav',null,
-   React.createElement('button',{onClick:()=>setShot(s=>s+1)},'한 발 발사'),
-   React.createElement('button',{onClick:()=>[0,120,240,360,480,600].forEach(t=>setTimeout(()=>setShot(s=>s+1),t))},'6발 연속 발사')),
-  React.createElement(Canvas,{camera:{position:[0,0,0],fov:75,near:.05,far:60},dpr:[1,1.5],gl:{antialias:true}},
+   React.createElement('button',{onClick:fire},'한 발 발사'),
+   React.createElement('button',{onClick:()=>[0,120,240,360,480,600].forEach(t=>setTimeout(fire,t))},'6발 연속 발사')),
+  React.createElement(Canvas,{camera:{position:[0,0,0],fov:75,near:.05,far:60},dpr:[1,1.5],gl:{antialias:true},frameloop:'demand',onCreated:({invalidate})=>{invalidateRef.current=invalidate}},
    React.createElement('ambientLight',{intensity:1.5}),
    React.createElement('directionalLight',{position:[-3,5,2],intensity:2}),
+   React.createElement(FrameWake,{framesLeft}),
    React.createElement(Suspense,{fallback:null},
-    React.createElement(GunViewModel,{active:true,animationEnabled:true,shootTrigger:shot}),
+    React.createElement(GunViewModel,{active:true,animationEnabled:true,shootSignalRef:shotSignalRef,weaponId:'revolver'}),
     React.createElement(Probe))))
 }
 createRoot(document.getElementById('root')).render(React.createElement(Review))

@@ -14,9 +14,10 @@ export const WEAPON_SKINS = [
     name: { kr: '리볼버', en: 'REVOLVER' },
     collection: 'CLASSIC REVOLVER',
     preview: '/models/revolver-source.glb',
-    model: '/models/revolver-ads.glb?v=1',
-    offset: [0, -0.94, -0.9],
+    model: '/models/revolver-ads-150.glb',
+    offset: [0, -1.04, -0.9],
     viewScale: 1.1,
+    aimDrop: 0.22,
   },
   {
     id: 'banana',

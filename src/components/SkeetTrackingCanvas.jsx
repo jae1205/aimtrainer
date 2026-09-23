@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
@@ -6,9 +6,11 @@ import GunViewModel from './GunViewModel'
 import RangeFront from './RangeFront'
 import RangeInterior from './RangeInterior'
 import RangeStaticBatch from './RangeStaticBatch'
+import { RangeSurfaces } from './RangeDetails'
 import AimController from './AimController'
 import { createAimState, HIP_FOV } from '../utils/aim'
 import { createTrackingTarget, stepTrackingTarget } from '../utils/trackingTarget'
+import { rayHitsSphere } from '../utils/targetHit'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
@@ -21,6 +23,7 @@ const BALL_RADIUS = 0.2
 const DRAIN_TIME = 1.5
 const RENDER_DPR = [1, 1.5]
 const RENDER_OPTIONS = { antialias: true, precision: 'highp', powerPreference: 'high-performance', alpha: false }
+const AIM_POINT = { x: 0, y: 0 }
 
 
 const WALL_X = 6
@@ -284,8 +287,6 @@ function Scene({
   }
   const targetBounds = useMemo(() => getWindowBounds(ballRadius), [ballRadius])
   const nextPosition = useRef([0, 0, 0])
-  const visibleSpheres = useRef([])
-  const intersections = useRef([])
   const hitMask = useRef(new Uint8Array(NUM_BALLS_MAX))
   const hp = useRef(Array(NUM_BALLS_MAX).fill(1.0))
   const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
@@ -347,28 +348,24 @@ function Scene({
       if (!document.pointerLockElement || pendingShots.current <= 0) return
       pendingShots.current--
       camera.updateMatrixWorld()
-      raycaster.setFromCamera({ x: 0, y: 0 }, camera)
-      const visible = visibleSpheres.current
-      const contacts = intersections.current
-      visible.length = 0
-      contacts.length = 0
+      raycaster.setFromCamera(AIM_POINT, camera)
+      let hitIndex = -1
       for (let i = 0; i < numBalls; i++) {
-        const sphere = spheres.current[i]
-        if (!sphere) continue
-        sphere.updateWorldMatrix(true, false)
-        visible.push(sphere)
+        if (spheres.current[i] && groups.current[i] &&
+          rayHitsSphere(raycaster.ray, groups.current[i].position, ballRadius)) {
+          hitIndex = i
+          break
+        }
       }
-      raycaster.intersectObjects(visible, false, contacts)
       if (statsRef) statsRef.current.activeFrames++
-      const hit = contacts[0]
-      if (hit) {
+      if (hitIndex >= 0) {
         if (statsRef) {
           statsRef.current.hitFrames++
           statsRef.current.totalDamage++
         }
         playBeep(1)
         onDestroy()
-        resetBall(hit.object.userData.targetIndex)
+        resetBall(hitIndex)
       }
       return
     }
@@ -383,19 +380,16 @@ function Scene({
       if (!document.pointerLockElement) return
 
       camera.updateMatrixWorld()
-      raycaster.setFromCamera({ x: 0, y: 0 }, camera)
+      raycaster.setFromCamera(AIM_POINT, camera)
       const sphere = spheres.current[0]
       if (!sphere) return
-      sphere.updateWorldMatrix(true, false)
-      const contacts = intersections.current
-      contacts.length = 0
-      raycaster.intersectObject(sphere, false, contacts)
-      sphere.material.emissiveIntensity = contacts.length > 0 ? 1.25 : 0.6
+      const isHit = rayHitsSphere(raycaster.ray, group.position, ballRadius)
+      sphere.material.emissiveIntensity = isHit ? 1.25 : 0.6
 
       if (statsRef) {
         const stats = statsRef.current
         stats.activeFrames++
-        if (contacts.length > 0) {
+        if (isHit) {
           stats.hitFrames++
           stats.trackingSeconds += frameDelta
           stats.currentTrackSeconds += frameDelta
@@ -435,27 +429,25 @@ function Scene({
     if (!document.pointerLockElement) return
 
     camera.updateMatrixWorld()
-    raycaster.setFromCamera({ x: 0, y: 0 }, camera)
-    const visible = visibleSpheres.current
-    const contacts = intersections.current
+    raycaster.setFromCamera(AIM_POINT, camera)
     const hits = hitMask.current
-    visible.length = 0
-    contacts.length = 0
     hits.fill(0)
+    let visibleCount = 0
+    let hitCount = 0
     for (let i = 0; i < numBalls; i++) {
       const sphere = spheres.current[i]
       const group = groups.current[i]
       if (!sphere || !group || !isTargetInOpening(group.position, ballRadius)) continue
-
-      sphere.updateWorldMatrix(true, false)
-      visible.push(sphere)
+      visibleCount++
+      if (rayHitsSphere(raycaster.ray, group.position, ballRadius)) {
+        hits[i] = 1
+        hitCount++
+      }
     }
-    raycaster.intersectObjects(visible, false, contacts)
-    for (const hit of contacts) hits[hit.object.userData.targetIndex] = 1
 
-    if (statsRef && visible.length > 0) {
+    if (statsRef && visibleCount > 0) {
       statsRef.current.activeFrames++
-      if (contacts.length > 0) statsRef.current.hitFrames++
+      if (hitCount > 0) statsRef.current.hitFrames++
     }
 
     for (let i = 0; i < numBalls; i++) {
@@ -522,9 +514,10 @@ function Scene({
       <pointLight position={[-4.8, 2.7, -9]} intensity={room.rimIntensity} color={room.rimLight} distance={10} />
       <pointLight position={[4.8, 2.7, -9]} intensity={room.fillIntensity * 0.45} color={room.fillLight} distance={10} />
 
-      <RangeInterior />
-
-      <RangeFront opening={TARGET_WINDOW} backZ={BACK_Z} floorY={FLOOR_Y} ceilingY={CEIL_Y} wallX={WALL_X} />
+      <RangeSurfaces>
+        <RangeInterior />
+        <RangeFront opening={TARGET_WINDOW} backZ={BACK_Z} floorY={FLOOR_Y} ceilingY={CEIL_Y} wallX={WALL_X} />
+      </RangeSurfaces>
       <mesh receiveShadow position={[-WALL_X, sideWallCenterY, BACK_Z / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[Math.abs(BACK_Z), sideWallHeight]} />
         {theme === 'light'
@@ -571,7 +564,7 @@ function Scene({
 
         return (
           <group key={i} ref={(el) => { groups.current[i] = el }} position={initialPosition}>
-            <mesh name="tracking-target" ref={(el) => { spheres.current[i] = el }} userData={{ targetIndex: i }}>
+            <mesh name="tracking-target" ref={(el) => { spheres.current[i] = el }}>
               <sphereGeometry args={[ballRadius, 24, 24]} />
               <meshStandardMaterial color={ballColor} emissive={ballColor} emissiveIntensity={0.6} roughness={0.42} metalness={0.24} />
             </mesh>
@@ -597,6 +590,8 @@ function Scene({
   )
 }
 
+const MemoScene = memo(Scene)
+
 function SkeetTrackingCanvas({
   theme,
   sensitivity,
@@ -617,14 +612,15 @@ function SkeetTrackingCanvas({
   onTrackingScore,
 }) {
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
-  const [shootTrigger, setShootTrigger] = useState(0)
-  const handleShoot = useCallback(() => setShootTrigger((current) => current + 1), [])
+  const shootSignalRef = useRef(0)
+  const handleShoot = useCallback(() => { shootSignalRef.current++ }, [])
   const gridshotActive = trainingMode === 'gridshot'
   const aimRef = useRef(createAimState())
 
   return (
     <Canvas
       shadows="soft"
+      frameloop={active || viewModelActive ? 'always' : 'demand'}
       dpr={RENDER_DPR}
       gl={RENDER_OPTIONS}
       camera={CAMERA_CONFIG}
@@ -637,7 +633,7 @@ function SkeetTrackingCanvas({
       <color attach="background" args={[room.background]} />
       <PerspectiveCamera makeDefault {...CAMERA_CONFIG} />
       <AimController active={active && viewModelActive} aimRef={aimRef} />
-      <Scene
+      <MemoScene
         sensitivity={sensitivity}
         dpi={dpi}
         active={active}
@@ -658,7 +654,7 @@ function SkeetTrackingCanvas({
         <GunViewModel
           active={viewModelActive}
           animationEnabled={gridshotActive}
-          shootTrigger={gridshotActive ? shootTrigger : 0}
+          shootSignalRef={shootSignalRef}
           aimRef={aimRef}
           onReady={onViewModelReady}
         />

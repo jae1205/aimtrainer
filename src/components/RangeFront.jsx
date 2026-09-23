@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { Block, Plaque, RangeSurfaces, RepeatedBlocks, Strip } from './RangeDetails'
+import { Block, Plaque, RepeatedBlocks, Strip } from './RangeDetails'
 
 function RangeFront({ opening, backZ, floorY, ceilingY, wallX }) {
   const half = opening.width / 2
@@ -42,7 +42,7 @@ function RangeFront({ opening, backZ, floorY, ceilingY, wallX }) {
   })))
 
   return (
-    <RangeSurfaces><group name="range-front">
+    <group name="range-front">
       <mesh name="target-backdrop" position={[0, opening.centerY, opening.targetZ - 0.8]} renderOrder={-1}>
         <planeGeometry args={[opening.width + 2, opening.height + 2]} />
         <meshBasicMaterial color="#29362f" toneMapped={false} fog={false} />
@@ -94,7 +94,7 @@ function RangeFront({ opening, backZ, floorY, ceilingY, wallX }) {
       <Block position={[0, -0.57, backZ + 0.23]} size={[5.79, 0.12, 0.44]}
         color="#737e61" metalness={0.35} />
       <Block position={[0, floorY + 0.105, backZ + 0.31]} size={[5.8, 0.21, 0.62]} color="#46553f" />
-    </group></RangeSurfaces>
+    </group>
   )
 }
 

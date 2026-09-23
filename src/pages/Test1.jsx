@@ -1,6 +1,5 @@
-import { lazy, Suspense, useCallback, useState, useEffect, useRef } from 'react'
+import { lazy, Suspense, useCallback } from 'react'
 import Layout from '../components/Layout'
-import { useLanguage } from '../contexts/LanguageContext'
 import { preloadSkeetTracking } from '../routes/preloaders'
 import './Test1.css'
 
@@ -22,56 +21,9 @@ function Test1() {
   const sensitivityMultiplier = userSetup.valorantSens
   const trainingMode = localStorage.getItem('selectedTraining') || 'skeet'
 
-  const [score, setScore] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(60)
-  const [simActive, setSimActive] = useState(false)
-
-  useEffect(() => {
-    const onStart = () => setSimActive(true)
-    const onEnd   = () => setSimActive(false)
-    window.addEventListener('test-start', onStart)
-    window.addEventListener('test-end',   onEnd)
-    return () => {
-      window.removeEventListener('test-start', onStart)
-      window.removeEventListener('test-end',   onEnd)
-    }
-  }, [])
-
-  // FPS 측정
-  const [fps, setFps] = useState(0)
-  const rafRef = useRef(null)
-  useEffect(() => {
-    if (!simActive) {
-      setFps(0)
-      return undefined
-    }
-
-    let frameCount = 0
-    let lastTime = performance.now()
-    const loop = () => {
-      frameCount++
-      const now = performance.now()
-      if (now - lastTime >= 500) {
-        setFps(Math.round(frameCount * 1000 / (now - lastTime)))
-        frameCount = 0
-        lastTime = now
-      }
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    rafRef.current = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(rafRef.current)
-  }, [simActive])
-
   const handleComplete = useCallback((data) => {
     localStorage.setItem('test1Data', JSON.stringify({ ...data, sensitivity: sensitivityMultiplier, trainingMode }))
   }, [sensitivityMultiplier, trainingMode])
-  const handleStatsChange = useCallback(({ score: nextScore, timeLeft: nextTime }) => {
-    setScore(nextScore)
-    setTimeLeft(nextTime)
-  }, [])
-
-  const { t, lang } = useLanguage()
-  const isTracking = trainingMode === 'tracking'
 
   return (
     <Layout isTestPage={true} isLobby={true}>
@@ -81,16 +33,9 @@ function Test1() {
             onComplete={handleComplete}
             sensitivity={sensitivityMultiplier}
             theme="dark"
-            onStatsChange={handleStatsChange}
             trainingMode={trainingMode}
           />
         </Suspense>
-
-        <div className={`af-game-hud ${simActive ? 'is-visible' : ''}`}>
-          <div className="af-hud-item af-hud-fps"><span>FPS</span><strong>{fps}</strong></div>
-          <div className="af-hud-item"><span>{isTracking ? (lang === 'kr' ? '추적 점수' : 'TRACK SCORE') : t.hudTargets}</span><strong>{score}</strong>{!isTracking && t.hudTargetUnit && <small>{t.hudTargetUnit}</small>}</div>
-          <div className="af-hud-item af-hud-time"><span>{t.hudTimeLeft}</span><strong>{timeLeft}</strong><small>{t.hudTimeUnit}</small></div>
-        </div>
       </div>
     </Layout>
   )

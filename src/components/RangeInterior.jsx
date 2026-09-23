@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Block, Plaque, RangeSurfaces, RepeatedBlocks, Strip } from './RangeDetails'
+import { Block, Plaque, RepeatedBlocks, Strip } from './RangeDetails'
 
 const BAYS = [-10.2, -7.3, -4.4, -1.5]
 const FLOOR_Y = -2
@@ -15,7 +15,7 @@ function RangeInterior() {
     position: [0, FLOOR_Y + 0.02, z], size: [4.25, 0.04, 2.415],
   }))
   return (
-    <RangeSurfaces><group name="range-interior">
+    <group name="range-interior">
       {/* Solid floor panels have deliberate joints rather than coplanar overlay lines. */}
       <RepeatedBlocks items={floorSegments} color="#686a5b" receiveShadow={false} />
       {[-1, 1].map((side) => (
@@ -82,7 +82,7 @@ function RangeInterior() {
       <Block position={[0, 0.3, -0.08]} size={[2.05, 4.4, 0.16]} color="#2b3a2e" />
       <Block position={[0, 2.61, -0.05]} size={[2.36, 0.16, 0.22]} color="#959981" />
       <Strip position={[0, 2.68, -0.18]} size={[1.8, 0.04, 0.03]} color="#d4d3ae" />
-    </group></RangeSurfaces>
+    </group>
   )
 }
 

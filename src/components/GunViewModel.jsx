@@ -16,10 +16,11 @@ const _offset = new THREE.Vector3()
 const _localEuler = new THREE.Euler(0, 0, 0, 'YXZ')
 const _localQuat = new THREE.Quaternion()
 
-export default function GunViewModel({ active = true, animationEnabled = false, shootTrigger = 0, onReady, aimRef, weaponId }) {
+export default function GunViewModel({ active = true, animationEnabled = false, shootSignalRef, onReady, aimRef, weaponId }) {
   const groupRef = useRef(null)
   const shotTimeRef = useRef(null)
   const settleRef = useRef(0)
+  const lastShootSignalRef = useRef(shootSignalRef?.current ?? 0)
 
   const [equippedWeapon] = useState(getEquippedWeapon)
   const weapon = weaponId ? getWeaponSkin(weaponId) : equippedWeapon
@@ -50,6 +51,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     Object.values(actions).forEach((action) => action?.stop())
     shotTimeRef.current = null
     settleRef.current = 0
+    lastShootSignalRef.current = shootSignalRef?.current ?? 0
     resetCylinder(cylinder)
 
     if (!animationEnabled) {
@@ -75,34 +77,33 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
       idle?.stop()
       shoot?.stop()
     }
-  }, [actions, animationEnabled, cylinder])
-
-  // Shoot animation on trigger — always restart immediately on each click
-  useEffect(() => {
-    if (!animationEnabled || shootTrigger === 0) return
-    if (!actions) return
-    const shoot = actions['Armature|Shoot']
-    const idle = actions['Armature|Idle']
-    if (!shoot) return
-
-    // Keep idle running underneath recoil. Never expose the skeleton's bind pose.
-    idle?.stopFading().setEffectiveWeight(0)
-    shoot.stopFading()
-    shoot.reset()
-    shoot.enabled = true
-    shoot.setEffectiveWeight(1)
-    shoot.setEffectiveTimeScale(1)
-    shoot.setLoop(THREE.LoopOnce, 1)
-    shoot.clampWhenFinished = true
-    shoot.timeScale = 1
-    shoot.play()
-    shotTimeRef.current = 0
-    triggerCylinder(cylinder)
-  }, [animationEnabled, shootTrigger, actions, cylinder])
+  }, [actions, animationEnabled, cylinder, shootSignalRef])
 
   // Run before drei's mixer update so both poses have complementary weights
   // on every frame, including the exact frame the shot ends.
   useFrame((_, delta) => {
+    const nextShootSignal = shootSignalRef?.current ?? 0
+    if (animationEnabled && nextShootSignal !== lastShootSignalRef.current) {
+      lastShootSignalRef.current = nextShootSignal
+      const shoot = actions?.['Armature|Shoot']
+      const idle = actions?.['Armature|Idle']
+      if (shoot) {
+        // A frame-local signal avoids reconciling the whole Canvas per click.
+        // Idle remains underneath the recoil so no bind pose flashes through.
+        idle?.stopFading().setEffectiveWeight(0)
+        shoot.stopFading()
+        shoot.reset()
+        shoot.enabled = true
+        shoot.setEffectiveWeight(1)
+        shoot.setEffectiveTimeScale(1)
+        shoot.setLoop(THREE.LoopOnce, 1)
+        shoot.clampWhenFinished = true
+        shoot.timeScale = 1
+        shoot.play()
+        shotTimeRef.current = 0
+        triggerCylinder(cylinder)
+      }
+    }
     if (shotTimeRef.current === null) {
       settleRef.current = THREE.MathUtils.damp(settleRef.current, 0, 22, delta)
       return
@@ -142,6 +143,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     _offset
       .fromArray(weapon.offset)
     _offset.y -= settleRef.current * 0.024
+    _offset.y -= (weapon.aimDrop ?? 0) * (aimRef?.current.progress ?? 0)
     _offset.z += settleRef.current * 0.012
     _offset
       .applyQuaternion(camera.quaternion)
