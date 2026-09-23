@@ -107,8 +107,8 @@ function SkeetTrackingSim({ onComplete, sensitivity, theme = 'dark', trainingMod
   const isTracking = trainingMode === 'tracking'
   const isSwitching = trainingMode === 'switching'
   const trainingName = lang === 'kr'
-    ? (isGridshot ? '그리드' : isTracking ? '트래킹' : isSwitching ? '스위칭' : '스키트')
-    : (isGridshot ? 'Grid' : isTracking ? 'Tracking' : isSwitching ? 'Switching' : 'Skeet')
+    ? (isGridshot ? '그리드' : isTracking ? '랜덤 트래킹' : isSwitching ? '스위칭' : '스키트')
+    : (isGridshot ? 'Grid' : isTracking ? 'Random Tracking' : isSwitching ? 'Switching' : 'Skeet')
 
   const requestLock = useCallback(() => {
     if (!containerRef.current || isPointerLocked) return
