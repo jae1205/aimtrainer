@@ -10,7 +10,6 @@
 .af-layout #game-settings .my-4 { margin-block: 18px; background: #ffffff18 !important; }
 .af-game-settings-title { display: flex; align-items: center; justify-content: space-between; }
 .af-game-settings-title > span { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
-.af-game-settings-title small { color: #7e8c83; font: 8px 'Consolas', monospace; letter-spacing: 1px; }
 .af-lobby { min-height: 100svh; position: relative; isolation: isolate; background: #101815; overflow: clip; color: #f0f1e9; }
 .af-world { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #0d1512; }
 .af-world-image { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
@@ -82,15 +81,17 @@
 .af-button > span:last-child { font-size: 21px; }
 .af-button:disabled { opacity: .4; cursor: not-allowed; }
 .af-setup, .af-setup button, .af-setup input { font-family: inherit; }
-.af-training-select { margin: auto; padding: 0; width: min(920px, calc(100vw - 32px)); border: 1px solid #ffffff29; border-radius: 3px; color: #eef1e9; background: rgba(12, 19, 15, .98); box-shadow: 0 32px 100px #000d, inset 0 1px #ffffff0c; }
+.af-training-select { margin: auto; padding: 0; width: min(1050px, calc(100vw - 32px)); border: 1px solid #ffffff29; border-radius: 3px; color: #eef1e9; background: rgba(12, 19, 15, .98); box-shadow: 0 32px 100px #000d, inset 0 1px #ffffff0c; }
 .af-training-select::backdrop { background: #050907df; backdrop-filter: blur(9px); }
 .af-training-select-panel { padding: 0 25px 25px; }
 .af-training-select-heading { min-height: 70px; margin-inline: -25px; padding-inline: 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ffffff17; }
 .af-training-select-heading > div > span { display: block; color: #f3834c; font-size: 8px; font-weight: 800; letter-spacing: 1.8px; }
 .af-training-select-heading h2 { margin: 3px 0 0; font-size: 18px; font-weight: 800; }
-.af-training-select-heading > button { width: 34px; height: 34px; color: #aab4ad; border: 1px solid transparent; font-size: 25px; cursor: pointer; }
-.af-training-select-heading > button:hover { color: #fff; border-color: #ffffff24; background: #ffffff0b; }
-.af-training-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.af-training-select-heading > button { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; padding: 0; color: #aab4ad; border: 0; background: transparent; appearance: none; cursor: pointer; transition: color .18s ease; }
+.af-training-select-heading > button svg { width: 15px; height: 15px; display: block; }
+.af-training-select-heading > button:hover { color: #f3834c; }
+.af-training-select-heading > button:focus-visible { outline: 2px solid #f3834c; outline-offset: 2px; }
+.af-training-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
 .af-training-grid > button { min-height: 210px; padding: 20px; position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left; color: #a8b2aa; border: 1px solid #ffffff1a; background: #ffffff05; cursor: pointer; transition: .2s ease; }
 .af-training-grid > button:hover { color: #f2f0e8; border-color: #f3834c91; background: linear-gradient(135deg, #f3834c1b, #ffffff06 62%); transform: translateY(-2px); box-shadow: 0 14px 38px #0005; }
 .af-training-grid > button > svg { width: 48px; height: 48px; margin: 24px 0 17px; color: #f3834c; }

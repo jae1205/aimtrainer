@@ -2,6 +2,7 @@ export const SCORE_MAX = 1000
 
 const SCORE_TARGETS = {
   gridshot: { kills: 30, damage: 30, ttkFast: 0.45, ttkSlow: 2.2 },
+  switching: { kills: 24, damage: 24, ttkFast: 0.24, ttkSlow: 1.3 },
   // Skeet targets need sustained tracking before they break. Its benchmarks
   // therefore use realistic 60-second tracking output instead of gridshot's
   // instant-hit target count.

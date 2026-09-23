@@ -58,8 +58,7 @@ html {
 .af-settings-position { position: relative; }
 .af-settings-dialog { position: fixed; inset: 0; margin: auto; width: min(320px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }
 .af-settings-dialog::backdrop { background: rgb(3 9 7 / 62%); }
-.af-settings-title-actions { display: flex; align-items: center; gap: 10px; }
-.af-settings-close { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; color: inherit; cursor: pointer; background: transparent; transition: background .15s, color .15s; }
-.af-settings-close:hover { color: #f3834c; background: rgb(243 131 76 / 12%); }
+.af-settings-close { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; padding: 0; border: 0; color: inherit; cursor: pointer; background: transparent; transition: color .18s ease; }
+.af-settings-close:hover { color: #f3834c; }
 .af-settings-dialog :is(button, input):focus-visible { outline: 2px solid #ffb780; outline-offset: 3px; }
 @media (max-width: 600px) { .af-topbar { padding-inline: 18px; } .af-logo { font-size: 18px; gap: 8px; } .af-logo-mark { width: 24px; height: 24px; } }

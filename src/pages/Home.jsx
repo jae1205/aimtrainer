@@ -12,8 +12,8 @@ const COPY = {
     play: '플레이', shop: '상점', shopSubtitle: '장비와 스타일을 준비하세요.', preview: '스킨', soon: '준비 중', selected: '선택됨', modeLabel: '플레이 모드',
     round: '60초 · 입장 가능', ready: '입장 가능',
     setup: '감도 설정', setupDesc: '익숙한 마우스 설정으로 시작하세요.', dpi: '마우스 DPI', sens: '인게임 감도', close: '닫기', confirm: '준비 완료 · 입장',
-    trainingSelect: '훈련 선택', skeet: '스키트', gridshot: '그리드샷', tracking: '트래킹',
-    skeetDescription: '움직이는 타겟을 끝까지 추적하세요.', gridshotDescription: '나타나는 3개의 타겟을 빠르게 처치하세요.', trackingDescription: '랜덤하게 움직이는 공을 최대한 오래 따라가세요.',
+    trainingSelect: '훈련 선택', skeet: '스키트', gridshot: '그리드', tracking: '트래킹', switching: '스위칭',
+    skeetDescription: '움직이는 타겟을 끝까지 추적하세요.', gridshotDescription: '나타나는 3개의 타겟을 빠르게 처치하세요.', trackingDescription: '랜덤하게 움직이는 공을 최대한 오래 따라가세요.', switchingDescription: '움직이는 타겟의 머리를 한 발로 맞추고 빠르게 전환하세요.',
   },
   en: {
     titles: ['FIRING RANGE', 'SCORE MATCH', 'RANKED ARENA'],
@@ -22,8 +22,8 @@ const COPY = {
     play: 'PLAY', shop: 'STORE', shopSubtitle: 'Prepare your gear and style.', preview: 'SKINS', soon: 'Coming soon', selected: 'Selected', modeLabel: 'Game mode',
     round: '60 sec · Ready', ready: 'Ready to play',
     setup: 'SENSITIVITY', setupDesc: 'Start with your familiar mouse settings.', dpi: 'MOUSE DPI', sens: 'IN-GAME SENSITIVITY', close: 'Close', confirm: 'Ready · Enter range',
-    trainingSelect: 'SELECT TRAINING', skeet: 'SKEET', gridshot: 'GRIDSHOT', tracking: 'TRACKING',
-    skeetDescription: 'Track moving targets through their full path.', gridshotDescription: 'Eliminate three targets as quickly as possible.', trackingDescription: 'Stay on the randomly moving target for as long as possible.',
+    trainingSelect: 'SELECT TRAINING', skeet: 'SKEET', gridshot: 'GRID', tracking: 'TRACKING', switching: 'SWITCHING',
+    skeetDescription: 'Track moving targets through their full path.', gridshotDescription: 'Eliminate three targets as quickly as possible.', trackingDescription: 'Stay on the randomly moving target for as long as possible.', switchingDescription: 'Land one headshot on a moving target, then switch quickly.',
   },
 }
 
@@ -98,6 +98,20 @@ function TrainingSelectModal({ copy, onClose, onSelect }) {
         <path d="M34 6v5m0 14v5M22 18h5m14 0h5" />
       </>,
     },
+    {
+      id: 'switching',
+      code: '04',
+      title: copy.switching,
+      time: '60 SEC',
+      description: copy.switchingDescription,
+      icon: <>
+        <circle cx="10" cy="12" r="3.5" fill="currentColor" stroke="none" />
+        <path d="M7 18h6l1 15H6l1-15Z" />
+        <circle cx="37" cy="24" r="3.5" fill="currentColor" stroke="none" />
+        <path d="M34 30h6l1 14h-8l1-14Z" />
+        <path d="M17 13c7 0 11 3 15 8m-5-1 5 1-1-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </>,
+    },
   ]
 
   return <dialog ref={dialogRef} className="af-training-select" aria-labelledby="training-select-title"
@@ -105,7 +119,11 @@ function TrainingSelectModal({ copy, onClose, onSelect }) {
     <div className="af-training-select-panel">
       <div className="af-training-select-heading">
         <div><span>RANGE TRAINING</span><h2 id="training-select-title">{copy.trainingSelect}</h2></div>
-        <button type="button" aria-label={copy.close} onClick={onClose}>×</button>
+        <button type="button" aria-label={copy.close} onClick={onClose}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path d="M5 5l14 14M19 5 5 19" />
+          </svg>
+        </button>
       </div>
       <div className="af-training-grid">
         {trainings.map((training) => <button key={training.id} type="button" onClick={() => onSelect(training.id)}>

@@ -4,6 +4,7 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { getSoundVolume } from '../utils/sounds'
 import GunViewModel from './GunViewModel'
 import RangeFront from './RangeFront'
+import RangeSwitchingArena from './RangeSwitchingArena'
 import RangeInterior from './RangeInterior'
 import RangeStaticBatch from './RangeStaticBatch'
 import { RangeSurfaces } from './RangeDetails'
@@ -11,6 +12,7 @@ import AimController from './AimController'
 import { createAimState, HIP_FOV } from '../utils/aim'
 import { createTrackingTarget, stepTrackingTarget } from '../utils/trackingTarget'
 import { rayHitsSphere } from '../utils/targetHit'
+import { createSwitchingTarget, stepSwitchingTarget, registerSwitchingHit, SWITCHING_HITS_TO_KILL, SWITCHING_RESPAWN_DELAY } from '../utils/switchingTarget'
 import * as THREE from 'three'
 
 const PLAYER_EYE_Y = 1.25
@@ -42,6 +44,9 @@ const TARGET_WINDOW = {
   frame: 0.12,
   targetZ: BACK_Z - 0.34,
 }
+const SWITCHING_BODY_RADIUS = 0.11
+const SWITCHING_HEAD_RADIUS = 0.105
+const SWITCHING_HEAD_Y = 0.33
 
 const ROOM_THEME = {
   dark: {
@@ -90,16 +95,16 @@ const ROOM_THEME = {
   },
 }
 
-function getWindowBounds(ballRadius) {
+function getWindowBounds(ballRadius, opening = TARGET_WINDOW) {
   const padding = ballRadius * 1.35
-  const halfW = TARGET_WINDOW.width / 2
-  const halfH = TARGET_WINDOW.height / 2
+  const halfW = opening.width / 2
+  const halfH = opening.height / 2
 
   return {
     minX: -halfW + padding,
     maxX: halfW - padding,
-    minY: TARGET_WINDOW.centerY - halfH + padding,
-    maxY: TARGET_WINDOW.centerY + halfH - padding,
+    minY: opening.centerY - halfH + padding,
+    maxY: opening.centerY + halfH - padding,
   }
 }
 
@@ -150,13 +155,13 @@ function getWindowTargetPosition(target, ballRadius, out = [], bounds = getWindo
   return out
 }
 
-function isTargetInOpening(position, ballRadius) {
+function isTargetInOpening(position, ballRadius, opening = TARGET_WINDOW) {
   const x = Array.isArray(position) ? position[0] : position.x
   const y = Array.isArray(position) ? position[1] : position.y
-  const halfW = TARGET_WINDOW.width / 2
-  const halfH = TARGET_WINDOW.height / 2
-  const minY = TARGET_WINDOW.centerY - halfH
-  const maxY = TARGET_WINDOW.centerY + halfH
+  const halfW = opening.width / 2
+  const halfH = opening.height / 2
+  const minY = opening.centerY - halfH
+  const maxY = opening.centerY + halfH
 
   return (
     x + ballRadius > -halfW &&
@@ -259,7 +264,9 @@ function Scene({
   onShoot,
   onTrackingScore,
 }) {
+  const isSwitching = trainingMode === 'switching'
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
+  const targetWindow = TARGET_WINDOW
   const sideWallHeight = CEIL_Y - FLOOR_Y + SEAM_OVERLAP
   const sideWallCenterY = FLOOR_Y + (CEIL_Y - FLOOR_Y) / 2 - SEAM_OVERLAP / 2
   const barW = Math.max(0.28, ballRadius * 2.6)
@@ -267,6 +274,7 @@ function Scene({
   const barY = ballRadius + 0.14
   const groups = useRef([])
   const spheres = useRef([])
+  const switchingBodies = useRef([])
   const hpFills = useRef([])
   const barGroups = useRef([])
   const targets = useRef(null)
@@ -279,54 +287,90 @@ function Scene({
       const target = createTrackingTarget(getWindowBounds(ballRadius))
       targets.current = [target]
       initialPositions.current = [[target.x, target.y, TARGET_WINDOW.targetZ]]
+    } else if (trainingMode === 'switching') {
+      targets.current = []
+      for (let i = 0; i < numBalls; i++) {
+        targets.current.push(createSwitchingTarget(i, targets.current))
+      }
+      initialPositions.current = targets.current.map((target) => [target.x, target.y, target.z])
     } else {
       targets.current = Array.from({ length: NUM_BALLS_MAX },
         (_, i) => makeWindowTarget(i, numBalls, ballRadius, arcHeightCfg))
       initialPositions.current = targets.current.map((target) => getWindowTargetPosition(target, ballRadius))
     }
   }
-  const targetBounds = useMemo(() => getWindowBounds(ballRadius), [ballRadius])
+  const targetBounds = useMemo(() => getWindowBounds(ballRadius, targetWindow), [ballRadius, targetWindow])
   const nextPosition = useRef([0, 0, 0])
   const hitMask = useRef(new Uint8Array(NUM_BALLS_MAX))
   const hp = useRef(Array(NUM_BALLS_MAX).fill(1.0))
+  const switchingHits = useRef(Array(NUM_BALLS_MAX).fill(0))
   const firstContact = useRef(Array(NUM_BALLS_MAX).fill(-1))
   const elapsed = useRef(0)
   const pendingShots = useRef(0)
   const lastTrackingScore = useRef(-1)
+  const headCenter = useRef(new THREE.Vector3())
+  const bodyHitBox = useRef(new THREE.Box3())
+  const hitPoint = useRef(new THREE.Vector3())
   const { camera, raycaster } = useThree()
 
   useEffect(() => {
-    if (trainingMode !== 'gridshot') return undefined
+    if (trainingMode !== 'gridshot' && trainingMode !== 'switching') return undefined
     const handleShot = (event) => {
       if (event.button !== 0 || !active || !document.pointerLockElement) return
       pendingShots.current++
       onShoot?.()
     }
+    const handleLockChange = () => {
+      if (!document.pointerLockElement) {
+        pendingShots.current = 0
+      }
+    }
     window.addEventListener('mousedown', handleShot)
-    return () => window.removeEventListener('mousedown', handleShot)
+    document.addEventListener('pointerlockchange', handleLockChange)
+    return () => {
+      window.removeEventListener('mousedown', handleShot)
+      document.removeEventListener('pointerlockchange', handleLockChange)
+      pendingShots.current = 0
+    }
   }, [active, onShoot, trainingMode])
 
   const resetBall = useCallback((idx) => {
+    const previousTarget = targets.current[idx]
     const nextTarget = trainingMode === 'gridshot'
       // Include the hit target's old position so it cannot respawn in place.
       ? { position: getGridshotPosition(idx, groups.current.slice(0, numBalls)) }
-      : makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
+      : trainingMode === 'switching'
+        ? createSwitchingTarget(idx, targets.current.filter((target, i) => i !== idx && target?.respawnAt === undefined), previousTarget)
+        : makeWindowTarget(idx, numBalls, ballRadius, arcHeightCfg)
     const nextPosition = trainingMode === 'gridshot'
       ? nextTarget.position
-      : getWindowTargetPosition(nextTarget, ballRadius)
-    const visibleInOpening = isTargetInOpening(nextPosition, ballRadius)
+      : trainingMode === 'switching'
+        ? [nextTarget.x, nextTarget.y, nextTarget.z]
+        : getWindowTargetPosition(nextTarget, ballRadius)
+    const visibleInOpening = trainingMode === 'skeet' && isTargetInOpening(nextPosition, ballRadius, targetWindow)
     targets.current[idx] = nextTarget
     hp.current[idx] = 1.0
+    switchingHits.current[idx] = 0
     firstContact.current[idx] = -1
 
     const group = groups.current[idx]
     if (group) {
       group.position.set(...nextPosition)
+      group.visible = true
+    }
+
+    const switchingBody = switchingBodies.current[idx]
+    if (switchingBody) {
+      switchingBody.material.color.set('#e6e8e3')
+      switchingBody.material.emissive.set('#000000')
+      switchingBody.material.emissiveIntensity = 0
+      switchingBody.material.roughness = 0.78
+      switchingBody.material.metalness = 0
     }
 
     const barGroup = barGroups.current[idx]
     if (barGroup) {
-      barGroup.visible = trainingMode === 'skeet' && visibleInOpening
+      barGroup.visible = visibleInOpening
       barGroup.quaternion.copy(camera.quaternion)
     }
 
@@ -336,7 +380,7 @@ function Scene({
       fill.position.x = 0
       fill.material.color.copy(GREEN)
     }
-  }, [arcHeightCfg, ballRadius, camera, numBalls, trainingMode])
+  }, [arcHeightCfg, ballRadius, camera, numBalls, targetWindow, trainingMode])
 
   useFrame((_, delta) => {
     if (!active) return
@@ -366,6 +410,81 @@ function Scene({
         playBeep(1)
         onDestroy()
         resetBall(hitIndex)
+      }
+      return
+    }
+
+    if (trainingMode === 'switching') {
+      for (let i = 0; i < numBalls; i++) {
+        const target = targets.current[i]
+        const group = groups.current[i]
+        if (!target || !group) continue
+        if (target.respawnAt !== undefined) {
+          if (elapsed.current >= target.respawnAt) resetBall(i)
+          continue
+        }
+        stepSwitchingTarget(target, frameDelta)
+        group.position.set(target.x, target.y, target.z)
+      }
+
+      if (!document.pointerLockElement || pendingShots.current <= 0) return
+      pendingShots.current--
+      if (statsRef) statsRef.current.activeFrames++
+
+      camera.updateMatrixWorld()
+      raycaster.setFromCamera(AIM_POINT, camera)
+      let hitIndex = -1
+      let headshot = false
+      let hitDistance = Infinity
+      for (let i = 0; i < numBalls; i++) {
+        const target = targets.current[i]
+        const group = groups.current[i]
+        if (!target || target.respawnAt !== undefined || !group) continue
+        headCenter.current.set(group.position.x, group.position.y + SWITCHING_HEAD_Y, group.position.z)
+        const head = raycaster.ray.distanceSqToPoint(headCenter.current) <= SWITCHING_HEAD_RADIUS ** 2
+        bodyHitBox.current.min.set(group.position.x - SWITCHING_BODY_RADIUS, group.position.y - 0.22, group.position.z - SWITCHING_BODY_RADIUS)
+        bodyHitBox.current.max.set(group.position.x + SWITCHING_BODY_RADIUS, group.position.y + 0.22, group.position.z + SWITCHING_BODY_RADIUS)
+        const body = !head && raycaster.ray.intersectBox(bodyHitBox.current, hitPoint.current)
+        if (!head && !body) continue
+        const distance = head
+          ? camera.position.distanceTo(headCenter.current)
+          : camera.position.distanceTo(hitPoint.current)
+        if (distance < hitDistance) {
+          hitDistance = distance
+          hitIndex = i
+          headshot = head
+        }
+      }
+
+      if (hitIndex >= 0) {
+        if (statsRef) {
+          statsRef.current.hitFrames++
+          if (headshot) statsRef.current.headshots++
+        }
+        if (firstContact.current[hitIndex] < 0) firstContact.current[hitIndex] = elapsed.current
+        const oldHits = switchingHits.current[hitIndex]
+        const hit = registerSwitchingHit(oldHits, headshot)
+        switchingHits.current[hitIndex] = hit.hits
+        if (statsRef) statsRef.current.totalDamage += (hit.hits - oldHits) / SWITCHING_HITS_TO_KILL
+        if (!hit.destroyed) {
+          const body = switchingBodies.current[hitIndex]
+          if (body) {
+            body.material.color.set(ballColor)
+            body.material.emissive.set(ballColor)
+            body.material.emissiveIntensity = 0.6
+            body.material.roughness = 0.42
+            body.material.metalness = 0.24
+          }
+          playBeep(hit.health)
+        } else {
+          playBeep(1)
+          if (statsRef && firstContact.current[hitIndex] >= 0) {
+            statsRef.current.ttks.push(elapsed.current - firstContact.current[hitIndex])
+          }
+          onDestroy()
+          groups.current[hitIndex].visible = false
+          targets.current[hitIndex].respawnAt = elapsed.current + SWITCHING_RESPAWN_DELAY
+        }
       }
       return
     }
@@ -490,15 +609,15 @@ function Scene({
     <>
       <PlayerController sensitivityMultiplier={sensitivity} dpi={dpi} />
       <RangeStaticBatch />
-      <color attach="background" args={[room.background]} />
-      <fog attach="fog" args={[room.fog, room.fogNear, room.fogFar]} />
-      <ambientLight intensity={room.ambient} />
-      <hemisphereLight args={[room.hemiSky, room.hemiGround, room.hemiIntensity]} />
+      <color attach="background" args={[isSwitching ? '#363c3e' : room.background]} />
+      <fog attach="fog" args={[isSwitching ? '#363c3e' : room.fog, isSwitching ? 22 : room.fogNear, isSwitching ? 40 : room.fogFar]} />
+      <ambientLight intensity={isSwitching ? 0.9 : room.ambient} />
+      <hemisphereLight args={isSwitching ? ['#f0f1ee', '#4a5153', 0.8] : [room.hemiSky, room.hemiGround, room.hemiIntensity]} />
       <directionalLight
-        castShadow
+        castShadow={!isSwitching}
         position={[-2.5, 5.4, 1]}
-        intensity={room.keyIntensity}
-        color={room.keyLight}
+        intensity={isSwitching ? 1.2 : room.keyIntensity}
+        color={isSwitching ? '#f3f4f0' : room.keyLight}
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
         shadow-camera-left={-9}
@@ -510,10 +629,13 @@ function Scene({
         shadow-bias={-0.0001}
         shadow-normalBias={0.025}
       />
-      <spotLight position={[0, 4.2, -3.2]} angle={0.58} penumbra={0.8} intensity={room.fillIntensity} color={room.fillLight} distance={15} />
-      <pointLight position={[-4.8, 2.7, -9]} intensity={room.rimIntensity} color={room.rimLight} distance={10} />
-      <pointLight position={[4.8, 2.7, -9]} intensity={room.fillIntensity * 0.45} color={room.fillLight} distance={10} />
+      {!isSwitching && <>
+        <spotLight position={[0, 4.2, -3.2]} angle={0.58} penumbra={0.8} intensity={room.fillIntensity} color={room.fillLight} distance={15} />
+        <pointLight position={[-4.8, 2.7, -9]} intensity={room.rimIntensity} color={room.rimLight} distance={10} />
+        <pointLight position={[4.8, 2.7, -9]} intensity={room.fillIntensity * 0.45} color={room.fillLight} distance={10} />
+      </>}
 
+      {isSwitching ? <RangeSwitchingArena /> : <>
       <RangeSurfaces>
         <RangeInterior />
         <RangeFront opening={TARGET_WINDOW} backZ={BACK_Z} floorY={FLOOR_Y} ceilingY={CEIL_Y} wallX={WALL_X} />
@@ -558,21 +680,35 @@ function Scene({
         <planeGeometry args={[WALL_X * 2, Math.abs(BACK_Z)]} />
         <meshStandardMaterial color={room.ceiling} roughness={0.92} metalness={0.02} />
       </mesh>
+      </>}
 
       {Array.from({ length: numBalls }, (_, i) => {
         const initialPosition = initialPositions.current[i]
 
         return (
           <group key={i} ref={(el) => { groups.current[i] = el }} position={initialPosition}>
-            <mesh name="tracking-target" ref={(el) => { spheres.current[i] = el }}>
+            {isSwitching ? <>
+              <mesh name="switching-body" ref={(el) => { switchingBodies.current[i] = el }}>
+                <cylinderGeometry args={[0.09, SWITCHING_BODY_RADIUS, 0.44, 16]} />
+                <meshStandardMaterial color="#e6e8e3" roughness={0.78} />
+              </mesh>
+              <mesh position={[0, SWITCHING_HEAD_Y, 0]} name="switching-head">
+                <sphereGeometry args={[SWITCHING_HEAD_RADIUS, 16, 12]} />
+                <meshStandardMaterial color={ballColor} emissive={ballColor} emissiveIntensity={0.6} roughness={0.42} metalness={0.24} />
+              </mesh>
+              <mesh position={[0, 0.22, 0]}>
+                <cylinderGeometry args={[0.065, 0.065, 0.045, 12]} />
+                <meshStandardMaterial color="#242b2c" roughness={0.9} />
+              </mesh>
+            </> : <mesh name="tracking-target" ref={(el) => { spheres.current[i] = el }}>
               <sphereGeometry args={[ballRadius, 24, 24]} />
               <meshStandardMaterial color={ballColor} emissive={ballColor} emissiveIntensity={0.6} roughness={0.42} metalness={0.24} />
-            </mesh>
+            </mesh>}
 
-            <group
+            {trainingMode === 'skeet' && <group
               ref={(el) => { barGroups.current[i] = el }}
               position={[0, barY, ballRadius + 0.035]}
-              visible={trainingMode === 'skeet' && isTargetInOpening(initialPosition, ballRadius)}
+              visible={isTargetInOpening(initialPosition, ballRadius, targetWindow)}
             >
               <mesh position={[0, 0, 0.006]} renderOrder={21}>
                 <planeGeometry args={[barW, barH]} />
@@ -582,7 +718,7 @@ function Scene({
                 <planeGeometry args={[barW, barH]} />
                 <meshBasicMaterial color="#a6f47b" toneMapped={false} fog={false} depthWrite={false} />
               </mesh>
-            </group>
+            </group>}
           </group>
         )
       })}
@@ -614,7 +750,7 @@ function SkeetTrackingCanvas({
   const room = ROOM_THEME[theme === 'dark' ? 'dark' : 'light']
   const shootSignalRef = useRef(0)
   const handleShoot = useCallback(() => { shootSignalRef.current++ }, [])
-  const gridshotActive = trainingMode === 'gridshot'
+  const animatedWeapon = trainingMode === 'gridshot' || trainingMode === 'switching'
   const aimRef = useRef(createAimState())
 
   return (
@@ -653,7 +789,7 @@ function SkeetTrackingCanvas({
       <Suspense fallback={null}>
         <GunViewModel
           active={viewModelActive}
-          animationEnabled={gridshotActive}
+          animationEnabled={animatedWeapon}
           shootSignalRef={shootSignalRef}
           aimRef={aimRef}
           onReady={onViewModelReady}

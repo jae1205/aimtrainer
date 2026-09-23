@@ -207,20 +207,17 @@ function Layout({ children, isTestPage = false, isLobby = false }) {
 
               <div className="af-game-settings-title">
                 <span id="game-settings-title">{lang === 'kr' ? '게임 설정' : 'Game settings'}</span>
-                <div className="af-settings-title-actions">
-                  <small>PLAYER / LOCAL</small>
-                  <button
-                    ref={settingsCloseRef}
-                    type="button"
-                    className="af-settings-close"
-                    aria-label={lang === 'kr' ? '설정 닫기' : 'Close settings'}
-                    onClick={() => setSettingsOpen(false)}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-                      <path d="m6 6 12 12M18 6 6 18" />
-                    </svg>
-                  </button>
-                </div>
+                <button
+                  ref={settingsCloseRef}
+                  type="button"
+                  className="af-settings-close"
+                  aria-label={lang === 'kr' ? '설정 닫기' : 'Close settings'}
+                  onClick={() => setSettingsOpen(false)}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18" />
+                  </svg>
+                </button>
               </div>
 
               <Divider />

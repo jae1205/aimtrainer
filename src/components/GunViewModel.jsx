@@ -41,7 +41,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     onReady?.()
   }, [scene, weapon.viewScale, onReady])
 
-  // Gridshot uses the animated rig. Other modes keep the weapon in its authored grip pose.
+  // Shot-based modes use the animated rig. Tracking modes keep the authored grip pose.
   useEffect(() => {
     if (!actions) return
     const grip = actions['Armature|Grip']
@@ -88,6 +88,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
       const shoot = actions?.['Armature|Shoot']
       const idle = actions?.['Armature|Idle']
       if (shoot) {
+        // Grid and switching share the same single-click firing and idle timing.
         // A frame-local signal avoids reconciling the whole Canvas per click.
         // Idle remains underneath the recoil so no bind pose flashes through.
         idle?.stopFading().setEffectiveWeight(0)
@@ -98,7 +99,6 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
         shoot.setEffectiveTimeScale(1)
         shoot.setLoop(THREE.LoopOnce, 1)
         shoot.clampWhenFinished = true
-        shoot.timeScale = 1
         shoot.play()
         shotTimeRef.current = 0
         triggerCylinder(cylinder)
@@ -116,7 +116,7 @@ export default function GunViewModel({ active = true, animationEnabled = false, 
     // its recovery at the clip boundary.
     const blendStart = Math.max(0, duration - 0.2)
     const recoveryEnd = duration + 0.18
-    shotTimeRef.current += delta
+    shotTimeRef.current += delta * shoot.getEffectiveTimeScale()
     const t = THREE.MathUtils.clamp(
       (shotTimeRef.current - blendStart) / (recoveryEnd - blendStart), 0, 1,
     )

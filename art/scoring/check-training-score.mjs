@@ -15,5 +15,12 @@ assert.ok(calculateTrainingScore({
 }) >= 850, 'A strong skeet round should produce a strong result')
 assert.equal(calculateTrainingScore({ trainingMode: 'tracking', trackingPoints: 742 }), 742)
 assert.equal(calculateTrainingScore({ trainingMode: 'tracking', trackingPoints: 1200 }), SCORE_MAX)
+assert.equal(calculateTrainingScore({ trainingMode: 'switching' }), 0)
+assert.equal(calculateTrainingScore({
+  trainingMode: 'switching', kills: 24, accuracy: 100, damage: 24, avgTtk: 0.24,
+}), SCORE_MAX)
+assert.ok(calculateTrainingScore({
+  trainingMode: 'switching', kills: 18, accuracy: 75, damage: 18, avgTtk: 0.5,
+}) >= 700, 'A strong switching round should produce a strong result')
 
 console.log({ status: 'PASS', oldEquivalent, skeetScore })
